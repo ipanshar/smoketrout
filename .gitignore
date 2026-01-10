@@ -1,0 +1,118 @@
+# ===================
+# Backend (Laravel)
+# ===================
+backend/vendor/
+backend/node_modules/
+backend/.env
+backend/.env.backup
+backend/.env.production
+backend/storage/*.key
+backend/storage/logs/*
+!backend/storage/logs/.gitkeep
+backend/storage/framework/cache/data/*
+!backend/storage/framework/cache/data/.gitkeep
+backend/storage/framework/sessions/*
+!backend/storage/framework/sessions/.gitkeep
+backend/storage/framework/views/*
+!backend/storage/framework/views/.gitkeep
+backend/storage/framework/testing/*
+backend/bootstrap/cache/*
+!backend/bootstrap/cache/.gitkeep
+backend/database/*.sqlite
+backend/database/*.sqlite-journal
+backend/.phpunit.result.cache
+backend/Homestead.json
+backend/Homestead.yaml
+backend/npm-debug.log
+backend/yarn-error.log
+
+# ===================
+# Frontend (React/Vite)
+# ===================
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# ===================
+# Mobile (React Native)
+# ===================
+mobile/node_modules/
+mobile/.env
+mobile/.env.local
+
+# Android
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/build/
+mobile/android/local.properties
+mobile/android/*.iml
+mobile/android/.idea/
+mobile/android/captures/
+mobile/android/.externalNativeBuild/
+mobile/android/.cxx/
+mobile/android/app/release/
+
+# iOS
+mobile/ios/Pods/
+mobile/ios/Podfile.lock
+mobile/ios/build/
+mobile/ios/*.xcworkspace
+!mobile/ios/*.xcworkspace/contents.xcworkspacedata
+mobile/ios/*.xcodeproj/xcuserdata/
+mobile/ios/*.xcodeproj/project.xcworkspace/
+mobile/ios/DerivedData/
+
+# React Native
+mobile/.metro-health-check*
+mobile/.bundle/
+
+# ===================
+# IDE & Editors
+# ===================
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+
+# ===================
+# OS Files
+# ===================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===================
+# Logs
+# ===================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ===================
+# Misc
+# ===================
+*.bak
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+coverage/
+.nyc_output/
