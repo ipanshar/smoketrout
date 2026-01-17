@@ -92,14 +92,14 @@ export default function CashPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Касса</h1>
+      <h1 className="page-title mb-6">Касса</h1>
 
       {loading ? (
         <div className="text-center text-gray-500 py-8">Загрузка...</div>
       ) : (
         <>
           {/* Total balance by currency */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {currencyTotals.map((ct) => (
               <div key={ct.currency.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ export default function CashPage() {
             <select
               value={selectedCashRegister}
               onChange={(e) => setSelectedCashRegister(e.target.value ? Number(e.target.value) : '')}
-              className="input w-64"
+              className="input w-full sm:w-64"
             >
               <option value="">Все кассы</option>
               {summary.map((s) => (
@@ -147,7 +147,7 @@ export default function CashPage() {
             </select>
           </div>
 
-          {/* Movements table */}
+          {/* Movements */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="px-4 py-3 border-b border-gray-200">
               <h2 className="font-semibold">История движений</h2>
@@ -156,49 +156,86 @@ export default function CashPage() {
             {movements.length === 0 ? (
               <div className="p-8 text-center text-gray-500">Нет движений</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Дата</th>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Документ</th>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Тип</th>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Касса</th>
-                      <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Контрагент</th>
-                      <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Сумма</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {movements.map((m) => (
-                      <tr key={m.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-gray-600">
-                          {new Date(m.transaction.date).toLocaleDateString('ru')}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-primary-600 font-medium">{m.transaction.number}</span>
-                        </td>
-                        <td className="px-4 py-3">{getTypeLabel(m.transaction.type)}</td>
-                        <td className="px-4 py-3 text-gray-600">{m.cash_register.name}</td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {m.transaction.counterparty?.name || m.transaction.partner?.name || '—'}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className={`flex items-center justify-end gap-1 font-medium ${
-                            Number(m.amount) >= 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {Number(m.amount) >= 0 ? (
-                              <TrendingUp className="w-4 h-4" />
-                            ) : (
-                              <TrendingDown className="w-4 h-4" />
-                            )}
-                            {Number(m.amount).toLocaleString('ru')} {m.currency.code}
+              <>
+                {/* Mobile Cards View */}
+                <div className="block md:hidden divide-y divide-gray-200">
+                  {movements.map((m) => (
+                    <div key={m.id} className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-primary-600 font-medium">{m.transaction.number}</span>
+                        <span className={`font-medium ${Number(m.amount) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {Number(m.amount) >= 0 ? '+' : ''}{Number(m.amount).toLocaleString('ru')} {m.currency.code}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Дата:</span>
+                          <span>{new Date(m.transaction.date).toLocaleDateString('ru')}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Тип:</span>
+                          <span>{getTypeLabel(m.transaction.type)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Касса:</span>
+                          <span>{m.cash_register.name}</span>
+                        </div>
+                        {(m.transaction.counterparty || m.transaction.partner) && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Контрагент:</span>
+                            <span>{m.transaction.counterparty?.name || m.transaction.partner?.name}</span>
                           </div>
-                        </td>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Дата</th>
+                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Документ</th>
+                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Тип</th>
+                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Касса</th>
+                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Контрагент</th>
+                        <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Сумма</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {movements.map((m) => (
+                        <tr key={m.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-gray-600">
+                            {new Date(m.transaction.date).toLocaleDateString('ru')}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-primary-600 font-medium">{m.transaction.number}</span>
+                          </td>
+                          <td className="px-4 py-3">{getTypeLabel(m.transaction.type)}</td>
+                          <td className="px-4 py-3 text-gray-600">{m.cash_register.name}</td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {m.transaction.counterparty?.name || m.transaction.partner?.name || '—'}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className={`flex items-center justify-end gap-1 font-medium ${
+                              Number(m.amount) >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {Number(m.amount) >= 0 ? (
+                                <TrendingUp className="w-4 h-4" />
+                              ) : (
+                                <TrendingDown className="w-4 h-4" />
+                              )}
+                              {Number(m.amount).toLocaleString('ru')} {m.currency.code}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </>

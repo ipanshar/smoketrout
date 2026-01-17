@@ -75,12 +75,12 @@ export default function RecipesPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Рецепты</h1>
+    <div className="p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-xl md:text-2xl font-bold">Рецепты</h1>
         <Link
           to="/production/recipes/new"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full sm:w-auto justify-center"
         >
           <Plus size={20} />
           Добавить
@@ -152,15 +152,15 @@ export default function RecipesPage() {
 
                 {expandedId === recipe.id && (
                   <div className="px-4 pb-4 bg-gray-50">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Ингредиенты */}
                       <div>
                         <h4 className="text-sm font-medium text-gray-600 mb-2">Ингредиенты (на 1 партию)</h4>
                         <div className="space-y-1">
                           {recipe.ingredients.map((ing) => (
                             <div key={ing.id} className="flex justify-between text-sm">
-                              <span>{ing.product.name}</span>
-                              <span className="text-gray-600">
+                              <span className="truncate mr-2">{ing.product.name}</span>
+                              <span className="text-gray-600 whitespace-nowrap">
                                 {ing.quantity} {ing.product.unit?.short_name || 'шт'}
                               </span>
                             </div>
@@ -173,8 +173,8 @@ export default function RecipesPage() {
                         <div className="space-y-1">
                           {recipe.outputs.map((out) => (
                             <div key={out.id} className="flex justify-between text-sm">
-                              <span className="text-green-700">{out.product.name}</span>
-                              <span className="text-green-600 font-medium">
+                              <span className="text-green-700 truncate mr-2">{out.product.name}</span>
+                              <span className="text-green-600 font-medium whitespace-nowrap">
                                 {out.quantity} {out.product.unit?.short_name || 'шт'}
                               </span>
                             </div>

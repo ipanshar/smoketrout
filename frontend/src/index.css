@@ -28,6 +28,11 @@
     @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   
+  /* Адаптивные кнопки для мобильных */
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+  
   .btn-primary {
     @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
   }
@@ -62,5 +67,66 @@
 
   .table-cell {
     @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+  }
+  
+  /* Мобильные таблицы - показывать как карточки на маленьких экранах */
+  .mobile-table {
+    @apply w-full;
+  }
+  
+  .mobile-table thead {
+    @apply hidden md:table-header-group;
+  }
+  
+  .mobile-table tbody tr {
+    @apply block md:table-row border-b border-gray-200 py-3 md:py-0;
+  }
+  
+  .mobile-table tbody td {
+    @apply block md:table-cell py-1 md:py-4 px-4 md:px-6 text-sm;
+  }
+  
+  .mobile-table tbody td::before {
+    @apply font-medium text-gray-500 md:hidden;
+    content: attr(data-label) ": ";
+  }
+  
+  /* Контейнер с горизонтальным скроллом для таблиц */
+  .table-container {
+    @apply overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0;
+  }
+  
+  /* Адаптивная страница заголовок */
+  .page-header {
+    @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6;
+  }
+  
+  .page-title {
+    @apply text-xl sm:text-2xl font-bold text-gray-900;
+  }
+  
+  /* Адаптивная карточка формы */
+  .form-card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6;
+  }
+  
+  /* Адаптивная сетка формы */
+  .form-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
+  
+  /* Мобильные действия */
+  .mobile-actions {
+    @apply flex flex-wrap gap-2;
+  }
+  
+  /* Скрытый на мобильных */
+  .hide-mobile {
+    @apply hidden sm:inline-flex;
+  }
+  
+  /* Только для мобильных */
+  .show-mobile {
+    @apply inline-flex sm:hidden;
   }
 }

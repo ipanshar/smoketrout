@@ -94,12 +94,12 @@ export default function ProductionsPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Производство</h1>
+    <div className="p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-xl md:text-2xl font-bold">Производство</h1>
         <Link
           to="/production/productions/new"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full sm:w-auto justify-center"
         >
           <Plus size={20} />
           Новое производство
@@ -107,7 +107,7 @@ export default function ProductionsPage() {
       </div>
 
       {/* Фильтры */}
-      <div className="flex gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           <input
@@ -121,7 +121,7 @@ export default function ProductionsPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
+          className="px-4 py-2 border rounded-lg w-full sm:w-auto"
         >
           <option value="">Все статусы</option>
           <option value="draft">Черновик</option>
@@ -202,52 +202,37 @@ export default function ProductionsPage() {
 
                 {expandedId === prod.id && expandedData && (
                   <div className="px-4 pb-4 bg-gray-50">
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Ингредиенты */}
                       <div>
                         <h4 className="text-sm font-medium text-gray-600 mb-2">Списанные ингредиенты</h4>
-                        <table className="w-full text-sm">
-                          <thead className="text-left text-gray-500">
-                            <tr>
-                              <th className="pb-1">Товар</th>
-                              <th className="pb-1 text-right">План</th>
-                              <th className="pb-1 text-right">Факт</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {expandedData.ingredients?.map((ing: any) => (
-                              <tr key={ing.id}>
-                                <td>{ing.product.name}</td>
-                                <td className="text-right text-gray-500">{ing.planned_quantity}</td>
-                                <td className="text-right">{ing.actual_quantity}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                        <div className="space-y-2">
+                          {expandedData.ingredients?.map((ing: any) => (
+                            <div key={ing.id} className="flex justify-between items-center text-sm border-b border-gray-200 pb-1">
+                              <span className="truncate mr-2">{ing.product.name}</span>
+                              <div className="flex gap-3 whitespace-nowrap">
+                                <span className="text-gray-500">План: {ing.planned_quantity}</span>
+                                <span className="font-medium">Факт: {ing.actual_quantity}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                       {/* Выход */}
                       <div>
                         <h4 className="text-sm font-medium text-gray-600 mb-2">Произведённая продукция</h4>
-                        <table className="w-full text-sm">
-                          <thead className="text-left text-gray-500">
-                            <tr>
-                              <th className="pb-1">Товар</th>
-                              <th className="pb-1 text-right">План</th>
-                              <th className="pb-1 text-right">Факт</th>
-                              <th className="pb-1 text-right">С/с</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {expandedData.outputs?.map((out: any) => (
-                              <tr key={out.id}>
-                                <td className="text-green-700">{out.product.name}</td>
-                                <td className="text-right text-gray-500">{out.planned_quantity}</td>
-                                <td className="text-right text-green-600 font-medium">{out.actual_quantity}</td>
-                                <td className="text-right">{Number(out.cost).toFixed(2)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                        <div className="space-y-2">
+                          {expandedData.outputs?.map((out: any) => (
+                            <div key={out.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm border-b border-gray-200 pb-1">
+                              <span className="text-green-700 truncate mr-2">{out.product.name}</span>
+                              <div className="flex gap-3 whitespace-nowrap text-xs sm:text-sm mt-1 sm:mt-0">
+                                <span className="text-gray-500">План: {out.planned_quantity}</span>
+                                <span className="text-green-600 font-medium">Факт: {out.actual_quantity}</span>
+                                <span>С/с: {Number(out.cost).toFixed(2)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>

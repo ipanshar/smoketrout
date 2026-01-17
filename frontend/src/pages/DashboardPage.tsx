@@ -418,7 +418,7 @@ export default function DashboardPage() {
 
       {/* Recent Transactions */}
       {data?.recent_transactions && data.recent_transactions.length > 0 && (
-        <div className="card p-6">
+        <div className="card p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Последние движения</h2>
             <button 
@@ -428,7 +428,32 @@ export default function DashboardPage() {
               Все движения →
             </button>
           </div>
-          <div className="overflow-x-auto">
+          
+          {/* Mobile cards */}
+          <div className="block md:hidden space-y-3">
+            {data.recent_transactions.map((tx) => (
+              <div key={tx.id} className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-medium text-gray-900">{tx.number}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getTypeColor(tx.type)}`}>
+                    {tx.type_label}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-500">
+                    {new Date(tx.date).toLocaleDateString('ru-RU')}
+                    {tx.counterparty?.name && ` · ${tx.counterparty.name}`}
+                  </span>
+                  <span className="font-medium">
+                    {formatMoney(tx.total_amount, tx.currency?.symbol)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="text-left text-sm text-gray-500 border-b">

@@ -145,23 +145,25 @@ export default function ServicesPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Загрузка...</div>;
+    return <div className="p-4 sm:p-8 text-center text-gray-500">Загрузка...</div>;
   }
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Услуги</h1>
-        <button onClick={() => openModal()} className="btn-primary flex items-center gap-2">
+      {/* Header */}
+      <div className="page-header">
+        <h1 className="page-title">Услуги</h1>
+        <button onClick={() => openModal()} className="btn btn-primary flex items-center gap-2">
           <Plus className="w-4 h-4" />
-          Добавить услугу
+          <span className="hidden sm:inline">Добавить услугу</span>
         </button>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        {/* Filters */}
         <div className="p-4 border-b border-gray-200">
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1 max-w-md">
+          <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
@@ -183,7 +185,49 @@ export default function ServicesPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Cards View */}
+        <div className="block md:hidden divide-y divide-gray-200">
+          {services.length === 0 ? (
+            <div className="px-6 py-8 text-center text-gray-500">Услуги не найдены</div>
+          ) : (
+            services.map((service) => (
+              <div key={service.id} className={`p-4 ${!service.is_active ? 'bg-gray-50 opacity-60' : ''}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-medium text-gray-900">{service.name}</h3>
+                  <button
+                    onClick={() => handleToggleActive(service)}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                      service.is_active
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {service.is_active ? <ToggleRight className="w-3 h-3" /> : <ToggleLeft className="w-3 h-3" />}
+                    {service.is_active ? 'Активна' : 'Неактивна'}
+                  </button>
+                </div>
+                {service.description && (
+                  <p className="text-sm text-gray-500 mb-2">{service.description}</p>
+                )}
+                <div className="text-sm mb-3">
+                  <span className="text-gray-500">Цена:</span>{' '}
+                  <span className="font-medium">{Number(service.default_price).toLocaleString('ru')} {service.currency?.symbol || '₸'}</span>
+                </div>
+                <div className="flex gap-3 pt-2 border-t">
+                  <button onClick={() => openModal(service)} className="text-blue-600 text-sm flex items-center gap-1">
+                    <Pencil className="w-4 h-4" /> Изменить
+                  </button>
+                  <button onClick={() => handleDelete(service)} className="text-red-600 text-sm flex items-center gap-1">
+                    <Trash2 className="w-4 h-4" /> Удалить
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -270,8 +314,8 @@ export default function ServicesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold">
                 {editingService ? 'Редактировать услугу' : 'Новая услуга'}

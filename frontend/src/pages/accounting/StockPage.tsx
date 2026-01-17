@@ -108,14 +108,14 @@ export default function StockPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Склад</h1>
+      <h1 className="page-title mb-6">Склад</h1>
 
       {loading ? (
         <div className="text-center text-gray-500 py-8">Загрузка...</div>
       ) : (
         <>
           {/* Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -157,13 +157,13 @@ export default function StockPage() {
 
           {/* Filter */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="flex items-center gap-4">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Склад</label>
                 <select
                   value={selectedWarehouse}
                   onChange={(e) => setSelectedWarehouse(e.target.value ? Number(e.target.value) : '')}
-                  className="input w-64"
+                  className="input w-full sm:w-64"
                 >
                   <option value="">Все склады</option>
                   {warehouses.map((w) => (
@@ -173,10 +173,10 @@ export default function StockPage() {
               </div>
 
               {/* Tabs */}
-              <div className="ml-auto flex gap-2">
+              <div className="flex gap-2">
                 <button
                   onClick={() => setActiveTab('balances')}
-                  className={`px-4 py-2 rounded-lg font-medium ${
+                  className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium text-sm ${
                     activeTab === 'balances' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -184,7 +184,7 @@ export default function StockPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab('movements')}
-                  className={`px-4 py-2 rounded-lg font-medium ${
+                  className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium text-sm ${
                     activeTab === 'movements' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -204,14 +204,38 @@ export default function StockPage() {
               ) : (
                 stock.map((s) => (
                   <div key={s.warehouse.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                    <div className="px-4 py-3 border-b border-gray-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                       <h2 className="font-semibold">{s.warehouse.name}</h2>
                       <span className="text-sm text-gray-600">
                         Стоимость: <span className="font-medium">{s.total_value.toLocaleString('ru')} {currencySymbol}</span>
                       </span>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    {/* Mobile Cards View for Stock Items */}
+                    <div className="block md:hidden divide-y divide-gray-200">
+                      {s.items.map((item, index) => (
+                        <div key={index} className="p-4">
+                          <div className="font-medium text-gray-900 mb-2">{item.product.name}</div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-gray-500">Кол-во:</span>{' '}
+                              <span className="font-medium">{Number(item.quantity).toLocaleString('ru')} {item.product.unit?.short_name || 'шт'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Ср. цена:</span>{' '}
+                              <span>{Number(item.avg_cost).toLocaleString('ru')} {currencySymbol}</span>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-gray-500">Стоимость:</span>{' '}
+                              <span className="font-medium">{item.total_value.toLocaleString('ru')} {currencySymbol}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop Table View for Stock Items */}
+                    <div className="hidden md:block overflow-x-auto">
                       <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-200">
                           <tr>
@@ -252,49 +276,91 @@ export default function StockPage() {
               {movements.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">Нет движений</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Дата</th>
-                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Документ</th>
-                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Тип</th>
-                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Товар</th>
-                        <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Склад</th>
-                        <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Кол-во</th>
-                        <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Цена</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {movements.map((m) => (
-                        <tr key={m.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-gray-600">
-                            {new Date(m.transaction.date).toLocaleDateString('ru')}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="text-primary-600 font-medium">{m.transaction.number}</span>
-                          </td>
-                          <td className="px-4 py-3">{getTypeLabel(m.transaction.type)}</td>
-                          <td className="px-4 py-3 font-medium">{m.product.name}</td>
-                          <td className="px-4 py-3 text-gray-600">
-                            {m.warehouse.name}
-                            {m.warehouse_to && (
-                              <span className="text-gray-400"> → {m.warehouse_to.name}</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <span className={`font-medium ${Number(m.quantity) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {Number(m.quantity) >= 0 ? '+' : ''}{Number(m.quantity).toLocaleString('ru')}
+                <>
+                  {/* Mobile Cards View for Movements */}
+                  <div className="block md:hidden divide-y divide-gray-200">
+                    {movements.map((m) => (
+                      <div key={m.id} className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-primary-600 font-medium">{m.transaction.number}</span>
+                          <span className={`font-medium ${Number(m.quantity) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {Number(m.quantity) >= 0 ? '+' : ''}{Number(m.quantity).toLocaleString('ru')}
+                          </span>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Дата:</span>
+                            <span>{new Date(m.transaction.date).toLocaleDateString('ru')}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Тип:</span>
+                            <span>{getTypeLabel(m.transaction.type)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Товар:</span>
+                            <span className="text-right">{m.product.name}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Склад:</span>
+                            <span>
+                              {m.warehouse.name}
+                              {m.warehouse_to && <span className="text-gray-400"> → {m.warehouse_to.name}</span>}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-right text-gray-600">
-                            {Number(m.price).toLocaleString('ru')} {currencySymbol}
-                          </td>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Цена:</span>
+                            <span>{Number(m.price).toLocaleString('ru')} {currencySymbol}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View for Movements */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Дата</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Документ</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Тип</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Товар</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Склад</th>
+                          <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Кол-во</th>
+                          <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Цена</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {movements.map((m) => (
+                          <tr key={m.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-gray-600">
+                              {new Date(m.transaction.date).toLocaleDateString('ru')}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-primary-600 font-medium">{m.transaction.number}</span>
+                            </td>
+                            <td className="px-4 py-3">{getTypeLabel(m.transaction.type)}</td>
+                            <td className="px-4 py-3 font-medium">{m.product.name}</td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {m.warehouse.name}
+                              {m.warehouse_to && (
+                                <span className="text-gray-400"> → {m.warehouse_to.name}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className={`font-medium ${Number(m.quantity) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {Number(m.quantity) >= 0 ? '+' : ''}{Number(m.quantity).toLocaleString('ru')}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-gray-600">
+                              {Number(m.price).toLocaleString('ru')} {currencySymbol}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           )}

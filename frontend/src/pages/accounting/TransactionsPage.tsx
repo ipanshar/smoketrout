@@ -130,11 +130,12 @@ export default function TransactionsPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Движения</h1>
-        <Link to="/accounting/transactions/new" className="btn-primary flex items-center gap-2">
+      {/* Header */}
+      <div className="page-header">
+        <h1 className="page-title">Движения</h1>
+        <Link to="/accounting/transactions/new" className="btn btn-primary flex items-center gap-2">
           <Plus className="w-5 h-5" />
-          Создать
+          <span className="hidden sm:inline">Создать</span>
         </Link>
       </div>
 
@@ -144,7 +145,7 @@ export default function TransactionsPage() {
           <Filter className="w-5 h-5 text-gray-400" />
           <span className="font-medium">Фильтры</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-sm text-gray-600 mb-1">Поиск по номеру</label>
             <div className="relative">
@@ -185,80 +186,140 @@ export default function TransactionsPage() {
             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="input" />
           </div>
         </div>
-        <div className="flex gap-2 mt-4">
-          <button onClick={applyFilters} className="btn-primary">Применить</button>
-          <button onClick={clearFilters} className="btn-secondary">Сбросить</button>
+        <div className="flex flex-wrap gap-2 mt-4">
+          <button onClick={applyFilters} className="btn btn-primary">Применить</button>
+          <button onClick={clearFilters} className="btn btn-secondary">Сбросить</button>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Content */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {loading ? (
           <div className="p-8 text-center text-gray-500">Загрузка...</div>
         ) : transactions.length === 0 ? (
           <div className="p-8 text-center text-gray-500">Нет данных</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Номер</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Дата</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Тип</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Контрагент/Компаньон</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Сумма</th>
-                  <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">Статус</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Действия</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {transactions.map((t) => (
-                  <tr key={t.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <Link to={`/accounting/transactions/${t.id}`} className="text-primary-600 hover:underline font-medium">
-                        {t.number}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{new Date(t.date).toLocaleDateString('ru')}</td>
-                    <td className="px-4 py-3">{getTypeLabel(t.type)}</td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {t.counterparty?.name || t.partner?.name || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {Number(t.total_amount).toLocaleString('ru')} {t.currency?.symbol || ''}
-                      {t.paid_amount > 0 && t.paid_amount < t.total_amount && (
-                        <span className="text-sm text-gray-500 block">
-                          оплачено: {Number(t.paid_amount).toLocaleString('ru')} {t.currency?.symbol || ''}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[t.status]}`}>
-                        {statusLabels[t.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-1">
-                        <Link to={`/accounting/transactions/${t.id}`} className="p-1.5 text-gray-400 hover:text-primary-600" title="Просмотр">
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                        {t.status === 'draft' && (
-                          <button onClick={() => handleConfirm(t.id)} className="p-1.5 text-gray-400 hover:text-green-600" title="Провести">
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                        {t.status === 'confirmed' && (
-                          <button onClick={() => handleCancel(t.id)} className="p-1.5 text-gray-400 hover:text-red-600" title="Отменить">
-                            <XCircle className="w-4 h-4" />
-                          </button>
-                        )}
+          <>
+            {/* Mobile Cards View */}
+            <div className="block md:hidden divide-y divide-gray-200">
+              {transactions.map((t) => (
+                <div key={t.id} className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <Link to={`/accounting/transactions/${t.id}`} className="text-primary-600 font-medium">
+                      {t.number}
+                    </Link>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[t.status]}`}>
+                      {statusLabels[t.status]}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-sm mb-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Дата:</span>
+                      <span>{new Date(t.date).toLocaleDateString('ru')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Тип:</span>
+                      <span>{getTypeLabel(t.type)}</span>
+                    </div>
+                    {(t.counterparty || t.partner) && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Контрагент:</span>
+                        <span className="text-right">{t.counterparty?.name || t.partner?.name}</span>
                       </div>
-                    </td>
+                    )}
+                    <div className="flex justify-between font-medium">
+                      <span className="text-gray-500">Сумма:</span>
+                      <span>{Number(t.total_amount).toLocaleString('ru')} {t.currency?.symbol || ''}</span>
+                    </div>
+                    {t.paid_amount > 0 && t.paid_amount < t.total_amount && (
+                      <div className="flex justify-between text-gray-500">
+                        <span>Оплачено:</span>
+                        <span>{Number(t.paid_amount).toLocaleString('ru')} {t.currency?.symbol || ''}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Link to={`/accounting/transactions/${t.id}`} className="flex-1 btn btn-secondary btn-sm text-center flex items-center justify-center gap-1">
+                      <Eye className="w-4 h-4" /> Открыть
+                    </Link>
+                    {t.status === 'draft' && (
+                      <button onClick={() => handleConfirm(t.id)} className="btn btn-primary btn-sm flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4" /> Провести
+                      </button>
+                    )}
+                    {t.status === 'confirmed' && (
+                      <button onClick={() => handleCancel(t.id)} className="btn btn-danger btn-sm flex items-center gap-1">
+                        <XCircle className="w-4 h-4" /> Отмена
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Номер</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Дата</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Тип</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Контрагент/Компаньон</th>
+                    <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Сумма</th>
+                    <th className="text-center px-4 py-3 text-sm font-medium text-gray-600">Статус</th>
+                    <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Действия</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {transactions.map((t) => (
+                    <tr key={t.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <Link to={`/accounting/transactions/${t.id}`} className="text-primary-600 hover:underline font-medium">
+                          {t.number}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{new Date(t.date).toLocaleDateString('ru')}</td>
+                      <td className="px-4 py-3">{getTypeLabel(t.type)}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {t.counterparty?.name || t.partner?.name || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium">
+                        {Number(t.total_amount).toLocaleString('ru')} {t.currency?.symbol || ''}
+                        {t.paid_amount > 0 && t.paid_amount < t.total_amount && (
+                          <span className="text-sm text-gray-500 block">
+                            оплачено: {Number(t.paid_amount).toLocaleString('ru')} {t.currency?.symbol || ''}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[t.status]}`}>
+                          {statusLabels[t.status]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-1">
+                          <Link to={`/accounting/transactions/${t.id}`} className="p-1.5 text-gray-400 hover:text-primary-600" title="Просмотр">
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                          {t.status === 'draft' && (
+                            <button onClick={() => handleConfirm(t.id)} className="p-1.5 text-gray-400 hover:text-green-600" title="Провести">
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                          {t.status === 'confirmed' && (
+                            <button onClick={() => handleCancel(t.id)} className="p-1.5 text-gray-400 hover:text-red-600" title="Отменить">
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {/* Pagination */}

@@ -155,7 +155,7 @@ export default function RecipeFormPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-4 md:p-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate('/production/recipes')}
@@ -163,16 +163,16 @@ export default function RecipeFormPage() {
         >
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-xl md:text-2xl font-bold">
           {isEdit ? 'Редактирование рецепта' : 'Новый рецепт'}
         </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Основные данные */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 md:p-6">
           <h2 className="text-lg font-semibold mb-4">Основные данные</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Название *
@@ -197,7 +197,7 @@ export default function RecipeFormPage() {
                 placeholder="Авто"
               />
             </div>
-            <div className="col-span-2">
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Описание
               </label>
@@ -224,7 +224,7 @@ export default function RecipeFormPage() {
         </div>
 
         {/* Ингредиенты */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 md:p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Ингредиенты (на 1 партию)</h2>
             <button
@@ -233,12 +233,12 @@ export default function RecipeFormPage() {
               className="flex items-center gap-1 text-blue-600 hover:text-blue-700"
             >
               <Plus size={18} />
-              Добавить
+              <span className="hidden sm:inline">Добавить</span>
             </button>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {ingredients.map((item, index) => (
-              <div key={index} className="flex gap-2 items-center">
+              <div key={index} className="flex flex-col sm:flex-row gap-2">
                 <select
                   value={item.product_id}
                   onChange={(e) => updateIngredient(index, 'product_id', Number(e.target.value))}
@@ -251,30 +251,32 @@ export default function RecipeFormPage() {
                     </option>
                   ))}
                 </select>
-                <input
-                  type="number"
-                  step="0.0001"
-                  placeholder="Кол-во"
-                  value={item.quantity}
-                  onChange={(e) => updateIngredient(index, 'quantity', e.target.value)}
-                  className="w-32 px-3 py-2 border rounded-lg"
-                />
-                {ingredients.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeIngredient(index)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    step="0.0001"
+                    placeholder="Кол-во"
+                    value={item.quantity}
+                    onChange={(e) => updateIngredient(index, 'quantity', e.target.value)}
+                    className="flex-1 sm:w-32 px-3 py-2 border rounded-lg"
+                  />
+                  {ingredients.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeIngredient(index)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Выход */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 md:p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Выход готовой продукции</h2>
             <button
@@ -283,12 +285,12 @@ export default function RecipeFormPage() {
               className="flex items-center gap-1 text-green-600 hover:text-green-700"
             >
               <Plus size={18} />
-              Добавить
+              <span className="hidden sm:inline">Добавить</span>
             </button>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {outputs.map((item, index) => (
-              <div key={index} className="flex gap-2 items-center">
+              <div key={index} className="flex flex-col sm:flex-row gap-2">
                 <select
                   value={item.product_id}
                   onChange={(e) => updateOutput(index, 'product_id', Number(e.target.value))}
@@ -301,41 +303,43 @@ export default function RecipeFormPage() {
                     </option>
                   ))}
                 </select>
-                <input
-                  type="number"
-                  step="0.0001"
-                  placeholder="Кол-во"
-                  value={item.quantity}
-                  onChange={(e) => updateOutput(index, 'quantity', e.target.value)}
-                  className="w-32 px-3 py-2 border rounded-lg"
-                />
-                {outputs.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeOutput(index)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    step="0.0001"
+                    placeholder="Кол-во"
+                    value={item.quantity}
+                    onChange={(e) => updateOutput(index, 'quantity', e.target.value)}
+                    className="flex-1 sm:w-32 px-3 py-2 border rounded-lg"
+                  />
+                  {outputs.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeOutput(index)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Кнопки */}
-        <div className="flex justify-end gap-4">
+        <div className="flex flex-col sm:flex-row justify-end gap-4">
           <button
             type="button"
             onClick={() => navigate('/production/recipes')}
-            className="px-6 py-2 border rounded-lg hover:bg-gray-50"
+            className="px-6 py-2 border rounded-lg hover:bg-gray-50 order-2 sm:order-1"
           >
             Отмена
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 order-1 sm:order-2"
           >
             <Save size={18} />
             {saving ? 'Сохранение...' : 'Сохранить'}

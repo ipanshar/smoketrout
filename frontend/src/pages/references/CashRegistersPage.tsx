@@ -56,20 +56,22 @@ export default function CashRegistersPage() {
     r.code.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (isLoading) return <div className="p-6">Загрузка...</div>;
+  if (isLoading) return <div className="p-4 sm:p-6">Загрузка...</div>;
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Кассы</h1>
+    <div>
+      {/* Header */}
+      <div className="page-header">
+        <h1 className="page-title">Кассы</h1>
         {hasPermission('references.cash_registers.create') && (
           <Link to="/references/cash-registers/new" className="btn btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" />
-            Добавить
+            <span className="hidden sm:inline">Добавить</span>
           </Link>
         )}
       </div>
 
+      {/* Search */}
       <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -83,50 +85,91 @@ export default function CashRegistersPage() {
         </div>
       </div>
 
-      <div className="card overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="table-header">Название</th>
-              <th className="table-header">Код</th>
-              <th className="table-header">Тип</th>
-              <th className="table-header">Баланс</th>
-              <th className="table-header">Статус</th>
-              <th className="table-header w-24">Действия</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredRegisters.map((register) => (
-              <tr key={register.id} className="hover:bg-gray-50">
-                <td className="table-cell font-medium">{register.name}</td>
-                <td className="table-cell text-gray-500">{register.code}</td>
-                <td className="table-cell">{TYPE_LABELS[register.type]}</td>
-                <td className="table-cell font-medium">
-                  {parseFloat(register.balance).toLocaleString('ru-RU')} {register.currency?.symbol || register.currency?.code || ''}
-                </td>
-                <td className="table-cell">
-                  <span className={`px-2 py-1 rounded-full text-xs ${register.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {register.is_active ? 'Активна' : 'Неактивна'}
-                  </span>
-                </td>
-                <td className="table-cell">
-                  <div className="flex gap-2">
-                    {hasPermission('references.cash_registers.edit') && (
-                      <Link to={`/references/cash-registers/${register.id}`} className="text-blue-600 hover:text-blue-800">
-                        <Edit className="w-4 h-4" />
-                      </Link>
-                    )}
-                    {hasPermission('references.cash_registers.delete') && (
-                      <button onClick={() => handleDelete(register.id)} className="text-red-600 hover:text-red-800">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </td>
+      {/* Mobile Cards View */}
+      <div className="block md:hidden space-y-3">
+        {filteredRegisters.map((register) => (
+          <div key={register.id} className="card p-4">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <h3 className="font-medium text-gray-900">{register.name}</h3>
+                <p className="text-sm text-gray-500">{register.code}</p>
+              </div>
+              <span className={`px-2 py-1 rounded-full text-xs ${register.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                {register.is_active ? 'Активна' : 'Неактивна'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+              <div><span className="text-gray-500">Тип:</span> {TYPE_LABELS[register.type]}</div>
+              <div className="font-medium">
+                <span className="text-gray-500">Баланс:</span> {parseFloat(register.balance).toLocaleString('ru-RU')} {register.currency?.symbol || ''}
+              </div>
+            </div>
+            <div className="flex gap-3 pt-2 border-t">
+              {hasPermission('references.cash_registers.edit') && (
+                <Link to={`/references/cash-registers/${register.id}`} className="text-blue-600 text-sm flex items-center gap-1">
+                  <Edit className="w-4 h-4" /> Изменить
+                </Link>
+              )}
+              {hasPermission('references.cash_registers.delete') && (
+                <button onClick={() => handleDelete(register.id)} className="text-red-600 text-sm flex items-center gap-1">
+                  <Trash2 className="w-4 h-4" /> Удалить
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+        {filteredRegisters.length === 0 && (
+          <div className="text-center py-8 text-gray-500">Кассы не найдены</div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="table-header">Название</th>
+                <th className="table-header">Код</th>
+                <th className="table-header">Тип</th>
+                <th className="table-header">Баланс</th>
+                <th className="table-header">Статус</th>
+                <th className="table-header w-24">Действия</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredRegisters.map((register) => (
+                <tr key={register.id} className="hover:bg-gray-50">
+                  <td className="table-cell font-medium">{register.name}</td>
+                  <td className="table-cell text-gray-500">{register.code}</td>
+                  <td className="table-cell">{TYPE_LABELS[register.type]}</td>
+                  <td className="table-cell font-medium">
+                    {parseFloat(register.balance).toLocaleString('ru-RU')} {register.currency?.symbol || register.currency?.code || ''}
+                  </td>
+                  <td className="table-cell">
+                    <span className={`px-2 py-1 rounded-full text-xs ${register.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {register.is_active ? 'Активна' : 'Неактивна'}
+                    </span>
+                  </td>
+                  <td className="table-cell">
+                    <div className="flex gap-2">
+                      {hasPermission('references.cash_registers.edit') && (
+                        <Link to={`/references/cash-registers/${register.id}`} className="text-blue-600 hover:text-blue-800">
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                      )}
+                      {hasPermission('references.cash_registers.delete') && (
+                        <button onClick={() => handleDelete(register.id)} className="text-red-600 hover:text-red-800">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {filteredRegisters.length === 0 && (
           <div className="text-center py-8 text-gray-500">Кассы не найдены</div>
         )}
