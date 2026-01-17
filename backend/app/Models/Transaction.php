@@ -104,6 +104,11 @@ class Transaction extends Model
         return $this->hasMany(TransactionSalaryEntry::class);
     }
 
+    public function serviceEntries(): HasMany
+    {
+        return $this->hasMany(TransactionServiceEntry::class);
+    }
+
     public function getDebtAmountAttribute(): float
     {
         return $this->total_amount - $this->paid_amount;

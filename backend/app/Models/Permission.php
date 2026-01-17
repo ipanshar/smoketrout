@@ -81,6 +81,10 @@ class Permission extends Model
             'references.partners.create' => 'Создание компаньонов',
             'references.partners.edit' => 'Редактирование компаньонов',
             'references.partners.delete' => 'Удаление компаньонов',
+            'references.services.view' => 'Просмотр услуг',
+            'references.services.create' => 'Создание услуг',
+            'references.services.edit' => 'Редактирование услуг',
+            'references.services.delete' => 'Удаление услуг',
         ],
         'accounting' => [
             // Движения (проводки)

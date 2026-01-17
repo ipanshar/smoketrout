@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, RefreshCw, Plus, Trash2 } from 'lucide-react';
+import { Save, ArrowLeft, RefreshCw } from 'lucide-react';
 import api from '../../lib/api';
 
 interface Product {

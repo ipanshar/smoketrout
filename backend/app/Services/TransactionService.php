@@ -14,6 +14,7 @@ use App\Models\TransactionCounterpartyEntry;
 use App\Models\TransactionDividendEntry;
 use App\Models\TransactionItem;
 use App\Models\TransactionSalaryEntry;
+use App\Models\TransactionServiceEntry;
 use Illuminate\Support\Facades\DB;
 
 class TransactionService
@@ -35,7 +36,7 @@ class TransactionService
             // Создаём записи в зависимости от типа операции
             $this->createEntries($transaction, $data);
 
-            return $transaction->load(['counterparty', 'partner', 'cashEntries', 'items', 'counterpartyEntries', 'dividendEntries']);
+            return $transaction->load(['counterparty', 'partner', 'cashEntries', 'items', 'counterpartyEntries', 'dividendEntries', 'serviceEntries']);
         });
     }
 
@@ -58,6 +59,7 @@ class TransactionService
             $transaction->counterpartyEntries()->delete();
             $transaction->dividendEntries()->delete();
             $transaction->salaryEntries()->delete();
+            $transaction->serviceEntries()->delete();
 
             // Обновляем основные данные
             $transaction->update($data);
@@ -65,7 +67,7 @@ class TransactionService
             // Создаём новые записи
             $this->createEntries($transaction, $data);
 
-            return $transaction->load(['counterparty', 'partner', 'cashEntries', 'items', 'counterpartyEntries', 'dividendEntries', 'salaryEntries']);
+            return $transaction->load(['counterparty', 'partner', 'cashEntries', 'items', 'counterpartyEntries', 'dividendEntries', 'salaryEntries', 'serviceEntries']);
         });
     }
 
@@ -325,6 +327,14 @@ class TransactionService
         if (!empty($data['salary_entries'])) {
             foreach ($data['salary_entries'] as $entry) {
                 $transaction->salaryEntries()->create($entry);
+            }
+        }
+
+        // Записи услуг
+        if (!empty($data['service_entries'])) {
+            foreach ($data['service_entries'] as $entry) {
+                $entry['amount'] = abs($entry['quantity']) * ($entry['price'] ?? 0);
+                $transaction->serviceEntries()->create($entry);
             }
         }
     }

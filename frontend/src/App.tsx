@@ -37,6 +37,7 @@ import CurrenciesPage from './pages/references/CurrenciesPage';
 import CurrencyFormPage from './pages/references/CurrencyFormPage';
 import PartnersPage from './pages/references/PartnersPage';
 import PartnerFormPage from './pages/references/PartnerFormPage';
+import ServicesPage from './pages/references/ServicesPage';
 
 // Accounting pages
 import TransactionsPage from './pages/accounting/TransactionsPage';
@@ -108,6 +109,7 @@ function App() {
                 <Route path="/references/partners" element={<PartnersPage />} />
                 <Route path="/references/partners/new" element={<PartnerFormPage />} />
                 <Route path="/references/partners/:id" element={<PartnerFormPage />} />
+                <Route path="/references/services" element={<ServicesPage />} />
 
                 {/* Accounting routes */}
                 <Route path="/accounting/transactions" element={<TransactionsPage />} />

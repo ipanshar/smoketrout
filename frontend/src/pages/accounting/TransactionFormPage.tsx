@@ -78,6 +78,20 @@ interface User {
   name: string;
 }
 
+interface Service {
+  id: number;
+  name: string;
+  description: string | null;
+  default_price: number;
+}
+
+interface ServiceEntry {
+  service_id: number;
+  quantity: number;
+  price: number;
+  note?: string;
+}
+
 export default function TransactionFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -94,6 +108,7 @@ export default function TransactionFormPage() {
   const [description, setDescription] = useState('');
   const [totalAmount, setTotalAmount] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
+  const [paymentCashRegisterId, setPaymentCashRegisterId] = useState<number>(0);
   const [currencyId, setCurrencyId] = useState<number>(1);
   const [status, setStatus] = useState('draft');
 
@@ -102,6 +117,7 @@ export default function TransactionFormPage() {
   const [cashEntries, setCashEntries] = useState<CashEntry[]>([]);
   const [dividendEntries, setDividendEntries] = useState<DividendEntry[]>([]);
   const [salaryEntries, setSalaryEntries] = useState<SalaryEntry[]>([]);
+  const [serviceEntries, setServiceEntries] = useState<ServiceEntry[]>([]);
 
   // Dictionaries
   const [types, setTypes] = useState<TransactionType[]>([]);
@@ -112,6 +128,7 @@ export default function TransactionFormPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
 
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
@@ -124,10 +141,11 @@ export default function TransactionFormPage() {
   useEffect(() => {
     const hasItems = ['sale', 'purchase', 'transfer'].includes(type);
     if (hasItems) {
-      const sum = items.reduce((acc, item) => acc + item.quantity * item.price, 0);
-      setTotalAmount(sum);
+      const itemsSum = items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+      const servicesSum = serviceEntries.reduce((acc, entry) => acc + entry.quantity * entry.price, 0);
+      setTotalAmount(itemsSum + servicesSum);
     }
-  }, [items, type]);
+  }, [items, serviceEntries, type]);
 
   // Recalculate total when cash entries change (for payment operations)
   useEffect(() => {
@@ -177,7 +195,7 @@ export default function TransactionFormPage() {
 
   const loadDictionaries = async () => {
     try {
-      const [typesRes, counterpartiesRes, partnersRes, usersRes, cashRegistersRes, warehousesRes, productsRes, currenciesRes] = await Promise.all([
+      const [typesRes, counterpartiesRes, partnersRes, usersRes, cashRegistersRes, warehousesRes, productsRes, currenciesRes, servicesRes] = await Promise.all([
         api.get('/accounting/transactions/types'),
         api.get('/references/counterparties'),
         api.get('/references/partners'),
@@ -186,6 +204,7 @@ export default function TransactionFormPage() {
         api.get('/references/warehouses'),
         api.get('/references/products'),
         api.get('/references/currencies'),
+        api.get('/references/services', { params: { is_active: true, all: true } }),
       ]);
       setTypes(typesRes.data);
       setCounterparties(counterpartiesRes.data.data || counterpartiesRes.data);
@@ -194,6 +213,7 @@ export default function TransactionFormPage() {
       setCashRegisters(cashRegistersRes.data.data || cashRegistersRes.data);
       setWarehouses(warehousesRes.data.data || warehousesRes.data);
       setProducts(productsRes.data.data || productsRes.data);
+      setServices(servicesRes.data.data || servicesRes.data);
       
       const currenciesData = currenciesRes.data.data || currenciesRes.data;
       setCurrencies(currenciesData);
@@ -243,6 +263,11 @@ export default function TransactionFormPage() {
           currency_id: e.currency_id,
           amount: Math.abs(Number(e.amount)),
         })));
+        
+        // Для sale/purchase - устанавливаем кассу оплаты из первой записи
+        if (['sale', 'purchase'].includes(t.type) && t.cash_entries.length > 0) {
+          setPaymentCashRegisterId(t.cash_entries[0].cash_register_id);
+        }
       }
 
       if (t.dividend_entries) {
@@ -262,6 +287,15 @@ export default function TransactionFormPage() {
           amount: Number(e.amount),
         })));
       }
+
+      if (t.service_entries) {
+        setServiceEntries(t.service_entries.map((e: any) => ({
+          service_id: e.service_id,
+          quantity: Number(e.quantity),
+          price: Number(e.price),
+          note: e.note || '',
+        })));
+      }
     } catch (error) {
       console.error('Error loading transaction:', error);
       navigate('/accounting/transactions');
@@ -274,7 +308,9 @@ export default function TransactionFormPage() {
   const needsPartner = ['dividend_accrual', 'dividend_payment'].includes(type);
   const needsSalary = ['salary_accrual', 'salary_payment'].includes(type);
   const needsItems = ['sale', 'purchase', 'transfer'].includes(type);
-  const needsCash = ['cash_in', 'cash_out', 'sale', 'sale_payment', 'purchase', 'purchase_payment', 'dividend_payment', 'salary_payment'].includes(type);
+  const needsServices = ['sale', 'purchase'].includes(type);
+  // Кассовые операции только для прямых кассовых операций и выплат (для sale/purchase касса выбирается в разделе оплаты)
+  const needsCash = ['cash_in', 'cash_out', 'sale_payment', 'purchase_payment', 'dividend_payment', 'salary_payment'].includes(type);
   const needsTransferWarehouses = type === 'transfer';
   const canHavePartialPayment = ['sale', 'purchase'].includes(type);
 
@@ -286,6 +322,11 @@ export default function TransactionFormPage() {
   // Обработчик смены валюты - очищаем кассовые записи с неподходящими кассами
   const handleCurrencyChange = (newCurrencyId: number) => {
     setCurrencyId(newCurrencyId);
+    // Сбрасываем кассу оплаты если она не подходит по валюте
+    const currentPaymentCashReg = cashRegisters.find(cr => cr.id === paymentCashRegisterId);
+    if (currentPaymentCashReg && currentPaymentCashReg.currency_id !== newCurrencyId) {
+      setPaymentCashRegisterId(0);
+    }
     // Очищаем записи с неподходящими кассами
     setCashEntries(cashEntries.map(entry => {
       const cashReg = cashRegisters.find(cr => cr.id === entry.cash_register_id);
@@ -333,6 +374,12 @@ export default function TransactionFormPage() {
     const needsSalaryForType = ['salary_accrual', 'salary_payment'].includes(newType);
     if (!needsSalaryForType) {
       setSalaryEntries([]);
+    }
+
+    // Сбрасываем услуги если не нужны
+    const needsServicesForType = ['sale', 'purchase'].includes(newType);
+    if (!needsServicesForType) {
+      setServiceEntries([]);
     }
   };
 
@@ -391,6 +438,30 @@ export default function TransactionFormPage() {
     setDividendEntries(updated);
   };
 
+  // Service entries
+  const addServiceEntry = () => {
+    setServiceEntries([...serviceEntries, { service_id: 0, quantity: 1, price: 0, note: '' }]);
+  };
+
+  const removeServiceEntry = (index: number) => {
+    setServiceEntries(serviceEntries.filter((_, i) => i !== index));
+  };
+
+  const updateServiceEntry = (index: number, field: keyof ServiceEntry, value: any) => {
+    const updated = [...serviceEntries];
+    updated[index] = { ...updated[index], [field]: value };
+    
+    // При выборе услуги подставляем цену по умолчанию
+    if (field === 'service_id') {
+      const service = services.find(s => s.id === value);
+      if (service && service.default_price > 0) {
+        updated[index].price = Number(service.default_price);
+      }
+    }
+    
+    setServiceEntries(updated);
+  };
+
   const calculateDividends = async () => {
     if (!totalAmount || totalAmount <= 0) {
       alert('Укажите сумму для распределения');
@@ -417,10 +488,120 @@ export default function TransactionFormPage() {
     }
   };
 
+  // Валидация формы
+  const validateForm = (): Record<string, string> => {
+    const validationErrors: Record<string, string> = {};
+
+    // Тип операции
+    if (!type) {
+      validationErrors.type = 'Выберите тип операции';
+    }
+
+    // Дата
+    if (!date) {
+      validationErrors.date = 'Укажите дату';
+    }
+
+    // Контрагент для sale/purchase
+    if (needsCounterparty && !counterpartyId) {
+      validationErrors.counterparty = 'Выберите контрагента';
+    }
+
+    // Товары - проверка склада
+    if (needsItems && items.length > 0) {
+      const itemsWithoutWarehouse = items.filter(i => i.product_id && !i.warehouse_id);
+      if (itemsWithoutWarehouse.length > 0) {
+        validationErrors.items_warehouse = 'Укажите склад для всех товаров';
+      }
+      const itemsWithoutProduct = items.filter(i => !i.product_id);
+      if (itemsWithoutProduct.length > 0 && items.some(i => i.product_id)) {
+        validationErrors.items_product = 'Выберите товар для всех строк или удалите пустые';
+      }
+    }
+
+    // Для перемещения - проверка склада назначения
+    if (needsTransferWarehouses && items.length > 0) {
+      const itemsWithoutWarehouseTo = items.filter(i => i.product_id && !i.warehouse_to_id);
+      if (itemsWithoutWarehouseTo.length > 0) {
+        validationErrors.items_warehouse_to = 'Укажите склад назначения для всех товаров';
+      }
+    }
+
+    // Проверка услуг - если добавлены, должны быть заполнены
+    if (serviceEntries.length > 0) {
+      const invalidServices = serviceEntries.filter(e => !e.service_id || e.quantity <= 0 || e.price < 0);
+      if (invalidServices.length > 0) {
+        validationErrors.service_entries = 'Заполните все поля для услуг (услуга, количество, цена)';
+      }
+    }
+
+    // Касса для оплаты
+    if (canHavePartialPayment && paidAmount > 0 && !paymentCashRegisterId) {
+      validationErrors.payment_cash = 'Выберите кассу для оплаты';
+    }
+
+    // Кассовые операции для cash_in/cash_out и т.д.
+    if (needsCash) {
+      const validCashEntries = cashEntries.filter(e => e.cash_register_id && e.amount > 0);
+      if (validCashEntries.length === 0) {
+        validationErrors.cash_entries = 'Добавьте кассовые операции';
+      }
+    }
+
+    // Записи дивидендов
+    if (needsPartner && dividendEntries.length === 0) {
+      validationErrors.dividend_entries = 'Добавьте записи по дивидендам';
+    }
+
+    // Записи зарплаты
+    if (needsSalary && salaryEntries.length === 0) {
+      validationErrors.salary_entries = 'Добавьте записи по зарплате';
+    }
+
+    return validationErrors;
+  };
+
+  const [formValidationErrors, setFormValidationErrors] = useState<Record<string, string>>({});
+
   const handleSubmit = async (e: React.FormEvent, shouldConfirm = false) => {
     e.preventDefault();
+    
+    // Валидация формы
+    const validationErrors = validateForm();
+    setFormValidationErrors(validationErrors);
+    
+    if (Object.keys(validationErrors).length > 0) {
+      // Прокрутка к первой ошибке
+      const firstErrorKey = Object.keys(validationErrors)[0];
+      const errorElement = document.getElementById(`error-${firstErrorKey}`);
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
     setSaving(true);
     setErrors({});
+
+    // Формируем кассовые записи
+    let finalCashEntries: CashEntry[] = [];
+    
+    // Для sale/purchase: если есть оплата сейчас и выбрана касса
+    if (canHavePartialPayment && paidAmount > 0 && paymentCashRegisterId) {
+      const amount = type === 'purchase' ? -paidAmount : paidAmount;
+      finalCashEntries = [{
+        cash_register_id: paymentCashRegisterId,
+        currency_id: currencyId,
+        amount: amount,
+      }];
+    }
+    // Для остальных операций (cash_in, cash_out, sale_payment и т.д.)
+    else if (needsCash && cashEntries.length > 0) {
+      finalCashEntries = cashEntries.filter((e) => e.cash_register_id).map((e) => ({
+        ...e,
+        amount: ['cash_out', 'purchase_payment', 'dividend_payment', 'salary_payment'].includes(type) ? -e.amount : e.amount,
+      }));
+    }
 
     const data = {
       type,
@@ -432,12 +613,10 @@ export default function TransactionFormPage() {
       paid_amount: paidAmount,
       currency_id: currencyId,
       items: needsItems ? items.filter((i) => i.product_id) : undefined,
-      cash_entries: needsCash ? cashEntries.filter((e) => e.cash_register_id).map((e) => ({
-        ...e,
-        amount: ['cash_out', 'purchase', 'purchase_payment', 'dividend_payment', 'salary_payment'].includes(type) ? -e.amount : e.amount,
-      })) : undefined,
+      cash_entries: finalCashEntries.length > 0 ? finalCashEntries : undefined,
       dividend_entries: needsPartner ? dividendEntries.filter((e) => e.partner_id) : undefined,
       salary_entries: needsSalary ? salaryEntries.filter((e) => e.user_id) : undefined,
+      service_entries: needsServices ? serviceEntries.filter((e) => e.service_id) : undefined,
     };
 
     try {
@@ -490,16 +669,28 @@ export default function TransactionFormPage() {
       </div>
 
       <form onSubmit={(e) => handleSubmit(e, false)}>
+        {/* Общее сообщение об ошибках валидации */}
+        {Object.keys(formValidationErrors).length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <h3 className="text-red-800 font-medium mb-2">Пожалуйста, исправьте следующие ошибки:</h3>
+            <ul className="list-disc list-inside text-red-600 text-sm space-y-1">
+              {Object.values(formValidationErrors).map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Основные данные</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
+            <div id="error-type">
               <label className="block text-sm font-medium text-gray-700 mb-1">Тип операции *</label>
               <select
                 value={type}
-                onChange={(e) => handleTypeChange(e.target.value)}
-                className="input"
+                onChange={(e) => { handleTypeChange(e.target.value); setFormValidationErrors({}); }}
+                className={`input ${formValidationErrors.type ? 'border-red-500 bg-red-50' : ''}`}
                 disabled={!isEditable}
                 required
               >
@@ -508,19 +699,24 @@ export default function TransactionFormPage() {
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
-              {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type[0]}</p>}
+              {(errors.type || formValidationErrors.type) && (
+                <p className="text-red-500 text-sm mt-1">{errors.type?.[0] || formValidationErrors.type}</p>
+              )}
             </div>
 
-            <div>
+            <div id="error-date">
               <label className="block text-sm font-medium text-gray-700 mb-1">Дата *</label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="input"
+                className={`input ${formValidationErrors.date ? 'border-red-500 bg-red-50' : ''}`}
                 disabled={!isEditable}
                 required
               />
+              {formValidationErrors.date && (
+                <p className="text-red-500 text-sm mt-1">{formValidationErrors.date}</p>
+              )}
             </div>
 
             <div>
@@ -538,12 +734,12 @@ export default function TransactionFormPage() {
             </div>
 
             {needsCounterparty && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Контрагент</label>
+              <div id="error-counterparty">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Контрагент *</label>
                 <select
                   value={counterpartyId}
                   onChange={(e) => setCounterpartyId(e.target.value ? Number(e.target.value) : '')}
-                  className="input"
+                  className={`input ${formValidationErrors.counterparty ? 'border-red-500 bg-red-50' : ''}`}
                   disabled={!isEditable}
                 >
                   <option value="">Выберите контрагента</option>
@@ -551,6 +747,9 @@ export default function TransactionFormPage() {
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
+                {formValidationErrors.counterparty && (
+                  <p className="text-red-500 text-sm mt-1">{formValidationErrors.counterparty}</p>
+                )}
               </div>
             )}
 
@@ -586,7 +785,7 @@ export default function TransactionFormPage() {
 
         {/* Items (Товары) */}
         {needsItems && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div id="error-items_warehouse" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Товары</h2>
               {isEditable && (
@@ -596,6 +795,17 @@ export default function TransactionFormPage() {
               )}
             </div>
 
+            {/* Ошибки валидации товаров */}
+            {(formValidationErrors.items_warehouse || formValidationErrors.items_product || formValidationErrors.items_warehouse_to) && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <ul className="list-disc list-inside text-red-600 text-sm">
+                  {formValidationErrors.items_warehouse && <li>{formValidationErrors.items_warehouse}</li>}
+                  {formValidationErrors.items_product && <li>{formValidationErrors.items_product}</li>}
+                  {formValidationErrors.items_warehouse_to && <li>{formValidationErrors.items_warehouse_to}</li>}
+                </ul>
+              </div>
+            )}
+
             {items.length === 0 ? (
               <p className="text-gray-500 text-center py-4">Добавьте товары</p>
             ) : (
@@ -603,12 +813,12 @@ export default function TransactionFormPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="text-left px-3 py-2 text-sm font-medium text-gray-600">Товар</th>
+                      <th className="text-left px-3 py-2 text-sm font-medium text-gray-600">Товар *</th>
                       <th className="text-left px-3 py-2 text-sm font-medium text-gray-600">
-                        {needsTransferWarehouses ? 'Откуда' : 'Склад'}
+                        {needsTransferWarehouses ? 'Откуда *' : 'Склад *'}
                       </th>
                       {needsTransferWarehouses && (
-                        <th className="text-left px-3 py-2 text-sm font-medium text-gray-600">Куда</th>
+                        <th className="text-left px-3 py-2 text-sm font-medium text-gray-600">Куда *</th>
                       )}
                       <th className="text-right px-3 py-2 text-sm font-medium text-gray-600">Кол-во</th>
                       <th className="text-right px-3 py-2 text-sm font-medium text-gray-600">Цена</th>
@@ -617,13 +827,16 @@ export default function TransactionFormPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {items.map((item, index) => (
-                      <tr key={index}>
+                    {items.map((item, index) => {
+                      const hasWarehouseError = formValidationErrors.items_warehouse && item.product_id && !item.warehouse_id;
+                      const hasWarehouseToError = formValidationErrors.items_warehouse_to && item.product_id && !item.warehouse_to_id;
+                      return (
+                      <tr key={index} className={hasWarehouseError || hasWarehouseToError ? 'bg-red-50' : ''}>
                         <td className="px-3 py-2">
                           <select
                             value={item.product_id}
                             onChange={(e) => updateItem(index, 'product_id', Number(e.target.value))}
-                            className="input"
+                            className={`input ${!item.product_id && formValidationErrors.items_product ? 'border-red-500' : ''}`}
                             disabled={!isEditable}
                           >
                             <option value={0}>Выберите товар</option>
@@ -636,7 +849,7 @@ export default function TransactionFormPage() {
                           <select
                             value={item.warehouse_id}
                             onChange={(e) => updateItem(index, 'warehouse_id', Number(e.target.value))}
-                            className="input"
+                            className={`input ${hasWarehouseError ? 'border-red-500 bg-red-100' : ''}`}
                             disabled={!isEditable}
                           >
                             <option value={0}>Выберите склад</option>
@@ -644,13 +857,16 @@ export default function TransactionFormPage() {
                               <option key={w.id} value={w.id}>{w.name}</option>
                             ))}
                           </select>
+                          {hasWarehouseError && (
+                            <p className="text-red-500 text-xs mt-1">Выберите склад</p>
+                          )}
                         </td>
                         {needsTransferWarehouses && (
                           <td className="px-3 py-2">
                             <select
                               value={item.warehouse_to_id || 0}
                               onChange={(e) => updateItem(index, 'warehouse_to_id', Number(e.target.value) || undefined)}
-                              className="input"
+                              className={`input ${hasWarehouseToError ? 'border-red-500 bg-red-100' : ''}`}
                               disabled={!isEditable}
                             >
                               <option value={0}>Выберите склад</option>
@@ -658,6 +874,9 @@ export default function TransactionFormPage() {
                                 <option key={w.id} value={w.id}>{w.name}</option>
                               ))}
                             </select>
+                            {hasWarehouseToError && (
+                              <p className="text-red-500 text-xs mt-1">Выберите склад</p>
+                            )}
                           </td>
                         )}
                         <td className="px-3 py-2">
@@ -693,7 +912,8 @@ export default function TransactionFormPage() {
                           )}
                         </td>
                       </tr>
-                    ))}
+                    );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -701,11 +921,126 @@ export default function TransactionFormPage() {
           </div>
         )}
 
+        {/* Service entries (Услуги) */}
+        {needsServices && (
+          <div id="error-service_entries" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Услуги</h2>
+              {isEditable && (
+                <button type="button" onClick={addServiceEntry} className="btn-secondary flex items-center gap-1">
+                  <Plus className="w-4 h-4" /> Добавить услугу
+                </button>
+              )}
+            </div>
+
+            {/* Ошибка валидации */}
+            {formValidationErrors.service_entries && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-red-600 text-sm">{formValidationErrors.service_entries}</p>
+              </div>
+            )}
+
+            {serviceEntries.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Добавьте услуги (опционально)</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left px-3 py-2 text-sm font-medium text-gray-600">Услуга</th>
+                      <th className="text-right px-3 py-2 text-sm font-medium text-gray-600">Кол-во</th>
+                      <th className="text-right px-3 py-2 text-sm font-medium text-gray-600">Цена</th>
+                      <th className="text-right px-3 py-2 text-sm font-medium text-gray-600">Сумма</th>
+                      <th className="text-left px-3 py-2 text-sm font-medium text-gray-600">Примечание</th>
+                      <th className="w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {serviceEntries.map((entry, index) => {
+                      const hasServiceError = !entry.service_id && formValidationErrors.service_entries;
+                      const hasQuantityError = entry.quantity <= 0 && formValidationErrors.service_entries;
+                      const hasError = hasServiceError || hasQuantityError;
+                      
+                      return (
+                      <tr key={index} className={hasError ? 'bg-red-50' : ''}>
+                        <td className="px-3 py-2">
+                          <select
+                            value={entry.service_id}
+                            onChange={(e) => updateServiceEntry(index, 'service_id', Number(e.target.value))}
+                            className={`input ${hasServiceError ? 'border-red-500 bg-red-100' : ''}`}
+                            disabled={!isEditable}
+                          >
+                            <option value={0}>Выберите услугу</option>
+                            {services.map((s) => (
+                              <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                          </select>
+                          {hasServiceError && (
+                            <p className="text-red-500 text-xs mt-1">Выберите услугу</p>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            value={entry.quantity}
+                            onChange={(e) => updateServiceEntry(index, 'quantity', Number(e.target.value))}
+                            className={`input text-right w-24 ${hasQuantityError ? 'border-red-500 bg-red-100' : ''}`}
+                            step="0.001"
+                            min="0.001"
+                            disabled={!isEditable}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            value={entry.price}
+                            onChange={(e) => updateServiceEntry(index, 'price', Number(e.target.value))}
+                            className="input text-right w-28"
+                            step="0.01"
+                            min="0"
+                            disabled={!isEditable}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium">
+                          {(entry.quantity * entry.price).toLocaleString('ru')} {currencySymbol}
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={entry.note || ''}
+                            onChange={(e) => updateServiceEntry(index, 'note', e.target.value)}
+                            className="input w-40"
+                            placeholder="Примечание"
+                            disabled={!isEditable}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          {isEditable && (
+                            <button type="button" onClick={() => removeServiceEntry(index)} className="text-red-500 hover:text-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                    })}
+                  </tbody>
+                </table>
+                <div className="flex justify-end pt-3 border-t mt-3">
+                  <div className="text-sm text-gray-600">
+                    Итого услуги: <span className="font-semibold">{serviceEntries.reduce((sum, e) => sum + e.quantity * e.price, 0).toLocaleString('ru')} {currencySymbol}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Cash entries (Кассовые операции) */}
         {needsCash && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div id="error-cash_entries" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Кассовые операции</h2>
+              <h2 className="text-lg font-semibold">Кассовые операции *</h2>
               {isEditable && (
                 <button type="button" onClick={addCashEntry} className="btn-secondary flex items-center gap-1">
                   <Plus className="w-4 h-4" /> Добавить
@@ -713,8 +1048,17 @@ export default function TransactionFormPage() {
               )}
             </div>
 
+            {/* Ошибка валидации */}
+            {formValidationErrors.cash_entries && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-red-600 text-sm">{formValidationErrors.cash_entries}</p>
+              </div>
+            )}
+
             {cashEntries.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">Добавьте кассовые операции</p>
+              <p className={`text-center py-4 ${formValidationErrors.cash_entries ? 'text-red-500' : 'text-gray-500'}`}>
+                Добавьте кассовые операции
+              </p>
             ) : (
               <div className="space-y-3">
                 {cashEntries.map((entry, index) => (
@@ -722,7 +1066,7 @@ export default function TransactionFormPage() {
                     <select
                       value={entry.cash_register_id}
                       onChange={(e) => updateCashEntry(index, 'cash_register_id', Number(e.target.value))}
-                      className="input flex-1"
+                      className={`input flex-1 ${!entry.cash_register_id && formValidationErrors.cash_entries ? 'border-red-500 bg-red-50' : ''}`}
                       disabled={!isEditable}
                     >
                       <option value={0}>Выберите кассу ({currentCurrency?.code || 'выберите валюту'})</option>
@@ -734,7 +1078,7 @@ export default function TransactionFormPage() {
                       type="number"
                       value={entry.amount}
                       onChange={(e) => updateCashEntry(index, 'amount', Number(e.target.value))}
-                      className="input w-40 text-right"
+                      className={`input w-40 text-right ${entry.amount <= 0 && formValidationErrors.cash_entries ? 'border-red-500 bg-red-50' : ''}`}
                       placeholder="Сумма"
                       step="0.01"
                       min="0"
@@ -754,9 +1098,9 @@ export default function TransactionFormPage() {
 
         {/* Dividend entries */}
         {needsPartner && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div id="error-dividend_entries" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Распределение дивидендов</h2>
+              <h2 className="text-lg font-semibold">Распределение дивидендов *</h2>
               {isEditable && (
                 <div className="flex gap-2">
                   <button type="button" onClick={addDividendEntry} className="btn-secondary flex items-center gap-1">
@@ -782,16 +1126,25 @@ export default function TransactionFormPage() {
               />
             </div>
 
+            {/* Ошибка валидации */}
+            {formValidationErrors.dividend_entries && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-red-600 text-sm">{formValidationErrors.dividend_entries}</p>
+              </div>
+            )}
+
             {dividendEntries.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">Добавьте компаньонов для выплаты или рассчитайте по долям</p>
+              <p className={`text-center py-4 ${formValidationErrors.dividend_entries ? 'text-red-500' : 'text-gray-500'}`}>
+                Добавьте компаньонов для выплаты или рассчитайте по долям
+              </p>
             ) : (
               <div className="space-y-3">
                 {dividendEntries.map((entry, index) => (
-                    <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className={`flex items-center gap-4 p-3 rounded-lg ${(!entry.partner_id || entry.amount <= 0) && formValidationErrors.dividend_entries ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
                       <select
                         value={entry.partner_id}
                         onChange={(e) => updateDividendEntry(index, 'partner_id', Number(e.target.value))}
-                        className="input flex-1"
+                        className={`input flex-1 ${!entry.partner_id && formValidationErrors.dividend_entries ? 'border-red-500 bg-red-50' : ''}`}
                         disabled={!isEditable}
                       >
                         <option value={0}>Выберите компаньона</option>
@@ -803,7 +1156,7 @@ export default function TransactionFormPage() {
                         type="number"
                         value={entry.amount}
                         onChange={(e) => updateDividendEntry(index, 'amount', Number(e.target.value))}
-                        className="input w-40 text-right"
+                        className={`input w-40 text-right ${entry.amount <= 0 && formValidationErrors.dividend_entries ? 'border-red-500 bg-red-50' : ''}`}
                         placeholder="Сумма"
                         step="0.01"
                         min="0"
@@ -833,10 +1186,10 @@ export default function TransactionFormPage() {
 
         {/* Salary entries */}
         {needsSalary && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div id="error-salary_entries" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">
-                {type === 'salary_accrual' ? 'Начисление зарплаты' : 'Выплата зарплаты'}
+                {type === 'salary_accrual' ? 'Начисление зарплаты *' : 'Выплата зарплаты *'}
               </h2>
               {isEditable && (
                 <button type="button" onClick={addSalaryEntry} className="btn-secondary flex items-center gap-2">
@@ -846,14 +1199,25 @@ export default function TransactionFormPage() {
               )}
             </div>
 
-            {salaryEntries.length > 0 && (
+            {/* Ошибка валидации */}
+            {formValidationErrors.salary_entries && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-red-600 text-sm">{formValidationErrors.salary_entries}</p>
+              </div>
+            )}
+
+            {salaryEntries.length === 0 ? (
+              <p className={`text-center py-4 ${formValidationErrors.salary_entries ? 'text-red-500' : 'text-gray-500'}`}>
+                Добавьте сотрудников
+              </p>
+            ) : (
               <div className="space-y-3">
                 {salaryEntries.map((entry, index) => (
-                  <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                  <div key={index} className={`flex items-center gap-4 p-3 rounded-lg ${(!entry.user_id || entry.amount <= 0) && formValidationErrors.salary_entries ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
                     <select
                       value={entry.user_id}
                       onChange={(e) => updateSalaryEntry(index, 'user_id', Number(e.target.value))}
-                      className="input flex-1"
+                      className={`input flex-1 ${!entry.user_id && formValidationErrors.salary_entries ? 'border-red-500 bg-red-50' : ''}`}
                       disabled={!isEditable}
                     >
                       <option value={0}>Выберите сотрудника</option>
@@ -865,7 +1229,7 @@ export default function TransactionFormPage() {
                       type="number"
                       value={entry.amount}
                       onChange={(e) => updateSalaryEntry(index, 'amount', Number(e.target.value))}
-                      className="input w-40"
+                      className={`input w-40 ${entry.amount <= 0 && formValidationErrors.salary_entries ? 'border-red-500 bg-red-50' : ''}`}
                       placeholder="Сумма"
                       step="0.01"
                       min="0"
@@ -898,7 +1262,7 @@ export default function TransactionFormPage() {
           <div className="flex justify-between items-center">
             <div>
               {canHavePartialPayment && (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-wrap">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Оплачено сейчас</label>
                     <input
@@ -912,6 +1276,25 @@ export default function TransactionFormPage() {
                       disabled={!isEditable}
                     />
                   </div>
+                  {paidAmount > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Касса</label>
+                      <select
+                        value={paymentCashRegisterId}
+                        onChange={(e) => setPaymentCashRegisterId(Number(e.target.value))}
+                        className={`input w-48 ${paidAmount > 0 && !paymentCashRegisterId ? 'border-red-300' : ''}`}
+                        disabled={!isEditable}
+                      >
+                        <option value={0}>Выберите кассу</option>
+                        {filteredCashRegisters.map((cr) => (
+                          <option key={cr.id} value={cr.id}>{cr.name}</option>
+                        ))}
+                      </select>
+                      {paidAmount > 0 && !paymentCashRegisterId && (
+                        <p className="text-red-500 text-xs mt-1">Выберите кассу для оплаты</p>
+                      )}
+                    </div>
+                  )}
                   <div className="text-sm text-gray-600">
                     Долг: <span className="font-medium">{(totalAmount - paidAmount).toLocaleString('ru')} {currencySymbol}</span>
                   </div>

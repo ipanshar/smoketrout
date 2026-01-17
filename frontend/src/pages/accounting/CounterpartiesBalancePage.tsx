@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { Users, AlertCircle } from 'lucide-react';
 import api from '../../lib/api';
 
 interface Counterparty {

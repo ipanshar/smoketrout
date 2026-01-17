@@ -86,6 +86,7 @@ class TransactionController extends Controller
             'dividendEntries.currency',
             'salaryEntries.user',
             'salaryEntries.currency',
+            'serviceEntries.service',
         ]);
 
         return response()->json($transaction);
@@ -234,6 +235,13 @@ class TransactionController extends Controller
             'salary_entries.*.currency_id' => ['required', 'exists:currencies,id'],
             'salary_entries.*.type' => ['required', 'in:accrual,payment'],
             'salary_entries.*.amount' => ['required', 'numeric', 'min:0'],
+
+            // Записи услуг
+            'service_entries' => ['nullable', 'array'],
+            'service_entries.*.service_id' => ['required', 'exists:services,id'],
+            'service_entries.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'service_entries.*.price' => ['required', 'numeric', 'min:0'],
+            'service_entries.*.note' => ['nullable', 'string', 'max:500'],
         ];
 
         return $request->validate($rules);

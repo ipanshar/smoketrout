@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\References\ProductTypeController;
 use App\Http\Controllers\Api\References\ProductController;
 use App\Http\Controllers\Api\References\CurrencyController;
 use App\Http\Controllers\Api\References\PartnerController;
+use App\Http\Controllers\Api\References\ServiceController;
 use App\Http\Controllers\Api\Accounting\TransactionController;
 use App\Http\Controllers\Api\Accounting\CashController;
 use App\Http\Controllers\Api\Accounting\StockController;
@@ -176,6 +177,18 @@ Route::middleware(['auth:sanctum', 'activity'])->group(function () {
         Route::middleware('permission:references.partners.create')->post('/partners', [PartnerController::class, 'store']);
         Route::middleware('permission:references.partners.edit')->put('/partners/{partner}', [PartnerController::class, 'update']);
         Route::middleware('permission:references.partners.delete')->delete('/partners/{partner}', [PartnerController::class, 'destroy']);
+
+        // Services (Услуги)
+        Route::middleware('permission:references.services.view')->group(function () {
+            Route::get('/services', [ServiceController::class, 'index']);
+            Route::get('/services/{service}', [ServiceController::class, 'show']);
+        });
+        Route::middleware('permission:references.services.create')->post('/services', [ServiceController::class, 'store']);
+        Route::middleware('permission:references.services.edit')->group(function () {
+            Route::put('/services/{service}', [ServiceController::class, 'update']);
+            Route::post('/services/{service}/toggle-active', [ServiceController::class, 'toggleActive']);
+        });
+        Route::middleware('permission:references.services.delete')->delete('/services/{service}', [ServiceController::class, 'destroy']);
     });
 
     // Accounting routes (Бухгалтерия)

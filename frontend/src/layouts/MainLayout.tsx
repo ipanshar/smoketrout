@@ -25,6 +25,7 @@ import {
   Boxes,
   PiggyBank,
   Banknote,
+  Briefcase,
 } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
@@ -64,6 +65,7 @@ const navigation: NavSection[] = [
       { name: 'Компаньоны', href: '/references/partners', icon: UsersRound, permission: 'references.partners.view' },
       { name: 'Товары', href: '/references/products', icon: Package, permission: 'references.products.view' },
       { name: 'Типы товаров', href: '/references/product-types', icon: Database, permission: 'references.product_types.view' },
+      { name: 'Услуги', href: '/references/services', icon: Briefcase, permission: 'references.services.view' },
       { name: 'Единицы измерения', href: '/references/units', icon: Ruler, permission: 'references.units.view' },
     ],
   },

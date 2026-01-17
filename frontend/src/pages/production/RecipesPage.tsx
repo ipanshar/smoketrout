@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Search, ChevronDown, ChevronUp, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import api from '../../lib/api';
 
 interface Product {
