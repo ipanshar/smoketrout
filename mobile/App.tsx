@@ -62,9 +62,18 @@ import {
   ProductionsListScreen,
 } from './src/screens/production';
 
+// Type definitions for navigation
+export type AdminStackParamList = {
+  AdminHome: undefined;
+  Roles: undefined;
+  RoleForm: {id?: number};
+  Users: undefined;
+  UserForm: {id?: number};
+};
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-const AdminStack = createNativeStackNavigator();
+const AdminStack = createNativeStackNavigator<AdminStackParamList>();
 const ReferencesStack = createNativeStackNavigator();
 const AccountingStack = createNativeStackNavigator();
 const ProductionStack = createNativeStackNavigator();

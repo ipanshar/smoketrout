@@ -809,7 +809,113 @@ export default function TransactionFormPage() {
             {items.length === 0 ? (
               <p className="text-gray-500 text-center py-4">Добавьте товары</p>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+                {/* Mobile cards */}
+                <div className="block md:hidden space-y-3">
+                  {items.map((item, index) => {
+                    const hasWarehouseError = formValidationErrors.items_warehouse && item.product_id && !item.warehouse_id;
+                    const hasWarehouseToError = formValidationErrors.items_warehouse_to && item.product_id && !item.warehouse_to_id;
+                    const hasProductError = !item.product_id && formValidationErrors.items_product;
+                    return (
+                      <div key={index} className={`p-3 rounded-lg border ${hasWarehouseError || hasWarehouseToError || hasProductError ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-gray-200'}`}>
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="text-sm font-medium text-gray-500">Позиция {index + 1}</span>
+                          {isEditable && (
+                            <button type="button" onClick={() => removeItem(index)} className="text-red-500 hover:text-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Товар *</label>
+                            <select
+                              value={item.product_id}
+                              onChange={(e) => updateItem(index, 'product_id', Number(e.target.value))}
+                              className={`input w-full text-sm ${hasProductError ? 'border-red-500' : ''}`}
+                              disabled={!isEditable}
+                            >
+                              <option value={0}>Выберите товар</option>
+                              {products.map((p) => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          <div className={needsTransferWarehouses ? 'grid grid-cols-2 gap-2' : ''}>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">{needsTransferWarehouses ? 'Откуда *' : 'Склад *'}</label>
+                              <select
+                                value={item.warehouse_id}
+                                onChange={(e) => updateItem(index, 'warehouse_id', Number(e.target.value))}
+                                className={`input w-full text-sm ${hasWarehouseError ? 'border-red-500 bg-red-100' : ''}`}
+                                disabled={!isEditable}
+                              >
+                                <option value={0}>Склад</option>
+                                {warehouses.map((w) => (
+                                  <option key={w.id} value={w.id}>{w.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            {needsTransferWarehouses && (
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">Куда *</label>
+                                <select
+                                  value={item.warehouse_to_id || 0}
+                                  onChange={(e) => updateItem(index, 'warehouse_to_id', Number(e.target.value) || undefined)}
+                                  className={`input w-full text-sm ${hasWarehouseToError ? 'border-red-500 bg-red-100' : ''}`}
+                                  disabled={!isEditable}
+                                >
+                                  <option value={0}>Склад</option>
+                                  {warehouses.map((w) => (
+                                    <option key={w.id} value={w.id}>{w.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Кол-во</label>
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
+                                className="input w-full text-sm text-right"
+                                step="0.001"
+                                min="0.001"
+                                disabled={!isEditable}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Цена</label>
+                              <input
+                                type="number"
+                                value={item.price}
+                                onChange={(e) => updateItem(index, 'price', Number(e.target.value))}
+                                className="input w-full text-sm text-right"
+                                step="0.01"
+                                min="0"
+                                disabled={!isEditable}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Сумма</label>
+                              <div className="input w-full text-sm text-right bg-gray-100 flex items-center justify-end">
+                                {(item.quantity * item.price).toLocaleString('ru')}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
@@ -916,7 +1022,8 @@ export default function TransactionFormPage() {
                     })}
                   </tbody>
                 </table>
-              </div>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -943,7 +1050,98 @@ export default function TransactionFormPage() {
             {serviceEntries.length === 0 ? (
               <p className="text-gray-500 text-center py-4">Добавьте услуги (опционально)</p>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+                {/* Mobile cards */}
+                <div className="block md:hidden space-y-3">
+                  {serviceEntries.map((entry, index) => {
+                    const hasServiceError = !entry.service_id && formValidationErrors.service_entries;
+                    const hasQuantityError = entry.quantity <= 0 && formValidationErrors.service_entries;
+                    const hasError = hasServiceError || hasQuantityError;
+                    
+                    return (
+                      <div key={index} className={`p-3 rounded-lg border ${hasError ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-gray-200'}`}>
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="text-sm font-medium text-gray-500">Услуга {index + 1}</span>
+                          {isEditable && (
+                            <button type="button" onClick={() => removeServiceEntry(index)} className="text-red-500 hover:text-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Услуга</label>
+                            <select
+                              value={entry.service_id}
+                              onChange={(e) => updateServiceEntry(index, 'service_id', Number(e.target.value))}
+                              className={`input w-full text-sm ${hasServiceError ? 'border-red-500 bg-red-100' : ''}`}
+                              disabled={!isEditable}
+                            >
+                              <option value={0}>Выберите услугу</option>
+                              {services.map((s) => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Кол-во</label>
+                              <input
+                                type="number"
+                                value={entry.quantity}
+                                onChange={(e) => updateServiceEntry(index, 'quantity', Number(e.target.value))}
+                                className={`input w-full text-sm text-right ${hasQuantityError ? 'border-red-500 bg-red-100' : ''}`}
+                                step="0.001"
+                                min="0.001"
+                                disabled={!isEditable}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Цена</label>
+                              <input
+                                type="number"
+                                value={entry.price}
+                                onChange={(e) => updateServiceEntry(index, 'price', Number(e.target.value))}
+                                className="input w-full text-sm text-right"
+                                step="0.01"
+                                min="0"
+                                disabled={!isEditable}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Сумма</label>
+                              <div className="input w-full text-sm text-right bg-gray-100 flex items-center justify-end">
+                                {(entry.quantity * entry.price).toLocaleString('ru')}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Примечание</label>
+                            <input
+                              type="text"
+                              value={entry.note || ''}
+                              onChange={(e) => updateServiceEntry(index, 'note', e.target.value)}
+                              className="input w-full text-sm"
+                              placeholder="Примечание"
+                              disabled={!isEditable}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-end pt-3 border-t">
+                    <div className="text-sm text-gray-600">
+                      Итого услуги: <span className="font-semibold">{serviceEntries.reduce((sum, e) => sum + e.quantity * e.price, 0).toLocaleString('ru')} {currencySymbol}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
@@ -1031,7 +1229,8 @@ export default function TransactionFormPage() {
                     Итого услуги: <span className="font-semibold">{serviceEntries.reduce((sum, e) => sum + e.quantity * e.price, 0).toLocaleString('ru')} {currencySymbol}</span>
                   </div>
                 </div>
-              </div>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -1062,33 +1261,41 @@ export default function TransactionFormPage() {
             ) : (
               <div className="space-y-3">
                 {cashEntries.map((entry, index) => (
-                  <div key={index} className="flex items-center gap-4">
-                    <select
-                      value={entry.cash_register_id}
-                      onChange={(e) => updateCashEntry(index, 'cash_register_id', Number(e.target.value))}
-                      className={`input flex-1 ${!entry.cash_register_id && formValidationErrors.cash_entries ? 'border-red-500 bg-red-50' : ''}`}
-                      disabled={!isEditable}
-                    >
-                      <option value={0}>Выберите кассу ({currentCurrency?.code || 'выберите валюту'})</option>
-                      {filteredCashRegisters.map((cr) => (
-                        <option key={cr.id} value={cr.id}>{cr.name} ({cr.currency?.code})</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      value={entry.amount}
-                      onChange={(e) => updateCashEntry(index, 'amount', Number(e.target.value))}
-                      className={`input w-40 text-right ${entry.amount <= 0 && formValidationErrors.cash_entries ? 'border-red-500 bg-red-50' : ''}`}
-                      placeholder="Сумма"
-                      step="0.01"
-                      min="0"
-                      disabled={!isEditable}
-                    />
-                    {isEditable && (
-                      <button type="button" onClick={() => removeCashEntry(index)} className="text-red-500 hover:text-red-700">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                  <div key={index} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 p-3 sm:p-0 bg-gray-50 sm:bg-transparent rounded-lg sm:rounded-none">
+                    <div className="flex-1">
+                      <label className="block sm:hidden text-xs text-gray-500 mb-1">Касса</label>
+                      <select
+                        value={entry.cash_register_id}
+                        onChange={(e) => updateCashEntry(index, 'cash_register_id', Number(e.target.value))}
+                        className={`input w-full ${!entry.cash_register_id && formValidationErrors.cash_entries ? 'border-red-500 bg-red-50' : ''}`}
+                        disabled={!isEditable}
+                      >
+                        <option value={0}>Выберите кассу ({currentCurrency?.code || 'выберите валюту'})</option>
+                        {filteredCashRegisters.map((cr) => (
+                          <option key={cr.id} value={cr.id}>{cr.name} ({cr.currency?.code})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 sm:flex-none">
+                        <label className="block sm:hidden text-xs text-gray-500 mb-1">Сумма</label>
+                        <input
+                          type="number"
+                          value={entry.amount}
+                          onChange={(e) => updateCashEntry(index, 'amount', Number(e.target.value))}
+                          className={`input w-full sm:w-40 text-right ${entry.amount <= 0 && formValidationErrors.cash_entries ? 'border-red-500 bg-red-50' : ''}`}
+                          placeholder="Сумма"
+                          step="0.01"
+                          min="0"
+                          disabled={!isEditable}
+                        />
+                      </div>
+                      {isEditable && (
+                        <button type="button" onClick={() => removeCashEntry(index)} className="text-red-500 hover:text-red-700 p-2 sm:p-0">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1140,38 +1347,48 @@ export default function TransactionFormPage() {
             ) : (
               <div className="space-y-3">
                 {dividendEntries.map((entry, index) => (
-                    <div key={index} className={`flex items-center gap-4 p-3 rounded-lg ${(!entry.partner_id || entry.amount <= 0) && formValidationErrors.dividend_entries ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
-                      <select
-                        value={entry.partner_id}
-                        onChange={(e) => updateDividendEntry(index, 'partner_id', Number(e.target.value))}
-                        className={`input flex-1 ${!entry.partner_id && formValidationErrors.dividend_entries ? 'border-red-500 bg-red-50' : ''}`}
-                        disabled={!isEditable}
-                      >
-                        <option value={0}>Выберите компаньона</option>
-                        {partners.map((p) => (
-                          <option key={p.id} value={p.id}>{p.name} ({p.share_percentage}%)</option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        value={entry.amount}
-                        onChange={(e) => updateDividendEntry(index, 'amount', Number(e.target.value))}
-                        className={`input w-40 text-right ${entry.amount <= 0 && formValidationErrors.dividend_entries ? 'border-red-500 bg-red-50' : ''}`}
-                        placeholder="Сумма"
-                        step="0.01"
-                        min="0"
-                        disabled={!isEditable}
-                      />
-                      <span className="text-gray-500">{currencySymbol}</span>
-                      {isEditable && (
-                        <button
-                          type="button"
-                          onClick={() => removeDividendEntry(index)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded"
+                    <div key={index} className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 p-3 rounded-lg ${(!entry.partner_id || entry.amount <= 0) && formValidationErrors.dividend_entries ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
+                      <div className="flex-1">
+                        <label className="block sm:hidden text-xs text-gray-500 mb-1">Компаньон</label>
+                        <select
+                          value={entry.partner_id}
+                          onChange={(e) => updateDividendEntry(index, 'partner_id', Number(e.target.value))}
+                          className={`input w-full ${!entry.partner_id && formValidationErrors.dividend_entries ? 'border-red-500 bg-red-50' : ''}`}
+                          disabled={!isEditable}
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                          <option value={0}>Выберите компаньона</option>
+                          {partners.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name} ({p.share_percentage}%)</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 sm:flex-none">
+                          <label className="block sm:hidden text-xs text-gray-500 mb-1">Сумма</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={entry.amount}
+                              onChange={(e) => updateDividendEntry(index, 'amount', Number(e.target.value))}
+                              className={`input w-full sm:w-40 text-right ${entry.amount <= 0 && formValidationErrors.dividend_entries ? 'border-red-500 bg-red-50' : ''}`}
+                              placeholder="Сумма"
+                              step="0.01"
+                              min="0"
+                              disabled={!isEditable}
+                            />
+                            <span className="text-gray-500">{currencySymbol}</span>
+                          </div>
+                        </div>
+                        {isEditable && (
+                          <button
+                            type="button"
+                            onClick={() => removeDividendEntry(index)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                 ))}
                 <div className="flex justify-end pt-2 border-t">
@@ -1213,38 +1430,48 @@ export default function TransactionFormPage() {
             ) : (
               <div className="space-y-3">
                 {salaryEntries.map((entry, index) => (
-                  <div key={index} className={`flex items-center gap-4 p-3 rounded-lg ${(!entry.user_id || entry.amount <= 0) && formValidationErrors.salary_entries ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
-                    <select
-                      value={entry.user_id}
-                      onChange={(e) => updateSalaryEntry(index, 'user_id', Number(e.target.value))}
-                      className={`input flex-1 ${!entry.user_id && formValidationErrors.salary_entries ? 'border-red-500 bg-red-50' : ''}`}
-                      disabled={!isEditable}
-                    >
-                      <option value={0}>Выберите сотрудника</option>
-                      {users.map((u) => (
-                        <option key={u.id} value={u.id}>{u.name}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      value={entry.amount}
-                      onChange={(e) => updateSalaryEntry(index, 'amount', Number(e.target.value))}
-                      className={`input w-40 ${entry.amount <= 0 && formValidationErrors.salary_entries ? 'border-red-500 bg-red-50' : ''}`}
-                      placeholder="Сумма"
-                      step="0.01"
-                      min="0"
-                      disabled={!isEditable}
-                    />
-                    <span className="text-gray-500">{currencySymbol}</span>
-                    {isEditable && (
-                      <button
-                        type="button"
-                        onClick={() => removeSalaryEntry(index)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded"
+                  <div key={index} className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 p-3 rounded-lg ${(!entry.user_id || entry.amount <= 0) && formValidationErrors.salary_entries ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
+                    <div className="flex-1">
+                      <label className="block sm:hidden text-xs text-gray-500 mb-1">Сотрудник</label>
+                      <select
+                        value={entry.user_id}
+                        onChange={(e) => updateSalaryEntry(index, 'user_id', Number(e.target.value))}
+                        className={`input w-full ${!entry.user_id && formValidationErrors.salary_entries ? 'border-red-500 bg-red-50' : ''}`}
+                        disabled={!isEditable}
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                        <option value={0}>Выберите сотрудника</option>
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 sm:flex-none">
+                        <label className="block sm:hidden text-xs text-gray-500 mb-1">Сумма</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={entry.amount}
+                            onChange={(e) => updateSalaryEntry(index, 'amount', Number(e.target.value))}
+                            className={`input w-full sm:w-40 ${entry.amount <= 0 && formValidationErrors.salary_entries ? 'border-red-500 bg-red-50' : ''}`}
+                            placeholder="Сумма"
+                            step="0.01"
+                            min="0"
+                            disabled={!isEditable}
+                          />
+                          <span className="text-gray-500">{currencySymbol}</span>
+                        </div>
+                      </div>
+                      {isEditable && (
+                        <button
+                          type="button"
+                          onClick={() => removeSalaryEntry(index)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 <div className="flex justify-end pt-2 border-t">
@@ -1258,18 +1485,18 @@ export default function TransactionFormPage() {
         )}
 
         {/* Summary */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex justify-between items-center">
-            <div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div className="order-2 sm:order-1">
               {canHavePartialPayment && (
-                <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Оплачено сейчас</label>
                     <input
                       type="number"
                       value={paidAmount}
                       onChange={(e) => setPaidAmount(Number(e.target.value))}
-                      className="input w-40"
+                      className="input w-full sm:w-40"
                       step="0.01"
                       min="0"
                       max={totalAmount}
@@ -1282,7 +1509,7 @@ export default function TransactionFormPage() {
                       <select
                         value={paymentCashRegisterId}
                         onChange={(e) => setPaymentCashRegisterId(Number(e.target.value))}
-                        className={`input w-48 ${paidAmount > 0 && !paymentCashRegisterId ? 'border-red-300' : ''}`}
+                        className={`input w-full sm:w-48 ${paidAmount > 0 && !paymentCashRegisterId ? 'border-red-300' : ''}`}
                         disabled={!isEditable}
                       >
                         <option value={0}>Выберите кассу</option>
@@ -1295,13 +1522,13 @@ export default function TransactionFormPage() {
                       )}
                     </div>
                   )}
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 mt-1 sm:mt-0">
                     Долг: <span className="font-medium">{(totalAmount - paidAmount).toLocaleString('ru')} {currencySymbol}</span>
                   </div>
                 </div>
               )}
             </div>
-            <div className="text-right">
+            <div className="text-right order-1 sm:order-2 pb-3 sm:pb-0 border-b sm:border-b-0 border-gray-200">
               <div className="text-sm text-gray-600">Итого</div>
               <div className="text-2xl font-bold">{totalAmount.toLocaleString('ru')} {currencySymbol}</div>
             </div>
@@ -1310,11 +1537,11 @@ export default function TransactionFormPage() {
 
         {/* Actions */}
         {isEditable && (
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => navigate('/accounting/transactions')} className="btn-secondary">
+          <div className="flex flex-col sm:flex-row justify-end gap-3">
+            <button type="button" onClick={() => navigate('/accounting/transactions')} className="btn-secondary order-3 sm:order-1">
               Отмена
             </button>
-            <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2">
+            <button type="submit" disabled={saving} className="btn-primary flex items-center justify-center gap-2 order-2">
               <Save className="w-4 h-4" />
               {saving ? 'Сохранение...' : 'Сохранить'}
             </button>
@@ -1322,7 +1549,7 @@ export default function TransactionFormPage() {
               type="button"
               onClick={(e) => handleSubmit(e, true)}
               disabled={saving}
-              className="btn-primary bg-green-600 hover:bg-green-700 flex items-center gap-2"
+              className="btn-primary bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2 order-1 sm:order-3"
             >
               <CheckCircle className="w-4 h-4" />
               Сохранить и провести

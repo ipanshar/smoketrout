@@ -10,8 +10,7 @@ import {
   Switch,
 } from 'react-native';
 import api from '../../lib/api';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RouteProp} from '@react-navigation/native';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 interface Permission {
   id: number;
@@ -20,10 +19,11 @@ interface Permission {
   module: string;
 }
 
-type Props = {
-  navigation: NativeStackNavigationProp<any>;
-  route: RouteProp<{params: {id?: number}}, 'params'>;
+type AdminStackParamList = {
+  RoleForm: {id?: number};
 };
+
+type Props = NativeStackScreenProps<AdminStackParamList, 'RoleForm'>;
 
 const MODULE_NAMES: Record<string, string> = {
   admin: 'Администрирование',

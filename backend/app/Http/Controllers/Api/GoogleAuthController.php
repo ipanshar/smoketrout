@@ -83,9 +83,14 @@ class GoogleAuthController extends Controller
 
             $payload = $response->json();
             
-            // Verify the token is for our app
-            $clientId = config('services.google.client_id');
-            if ($payload['aud'] !== $clientId) {
+            // Verify the token is for our app (web, android, or ios client)
+            $allowedClientIds = [
+                config('services.google.client_id'),
+                config('services.google.android_client_id'),
+                config('services.google.ios_client_id'),
+            ];
+            
+            if (!in_array($payload['aud'], array_filter($allowedClientIds))) {
                 return response()->json(['error' => 'Token not for this app'], 401);
             }
 

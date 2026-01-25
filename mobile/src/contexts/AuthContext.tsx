@@ -56,8 +56,9 @@ export function AuthProvider({children}: {children: ReactNode}) {
 
   const configureGoogleSignIn = () => {
     GoogleSignin.configure({
-      webClientId: 'YOUR_WEB_CLIENT_ID', // Замените на ваш Web Client ID из Google Cloud Console
+      webClientId: '328195281248-l7i32044akmuvgd3mla38h5qp7biqsvk.apps.googleusercontent.com',
       offlineAccess: true,
+      forceCodeForRefreshToken: true,
     });
   };
 

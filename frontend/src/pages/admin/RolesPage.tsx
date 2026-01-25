@@ -67,19 +67,64 @@ export default function RolesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Роли</h1>
-          <p className="text-gray-600 mt-1">Управление ролями и разрешениями</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Роли</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Управление ролями и разрешениями</p>
         </div>
-        <Link to="/admin/roles/create" className="btn btn-primary flex items-center gap-2">
+        <Link to="/admin/roles/create" className="btn btn-primary flex items-center justify-center gap-2">
           <Plus className="w-5 h-5" />
-          Создать роль
+          <span>Создать роль</span>
         </Link>
       </div>
 
       <div className="card overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
+        {/* Mobile cards */}
+        <div className="block md:hidden divide-y divide-gray-200">
+          {roles.map((role) => (
+            <div key={role.id} className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{role.display_name}</p>
+                    <p className="text-sm text-gray-500">{role.name}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Link
+                    to={`/admin/roles/${role.id}/edit`}
+                    className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </Link>
+                  {!role.is_system && (
+                    <button
+                      onClick={() => setDeleteId(role.id)}
+                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1 text-sm">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-600">{role.users_count} пользователей</span>
+                </div>
+                <p className="text-gray-500 text-xs">
+                  {getModuleNames(role.permissions) || 'Нет доступа'}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <table className="hidden md:table min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="table-header">Роль</th>

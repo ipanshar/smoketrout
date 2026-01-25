@@ -106,14 +106,14 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Пользователи</h1>
-          <p className="text-gray-600 mt-1">Управление пользователями системы</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Пользователи</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Управление пользователями системы</p>
         </div>
-        <Link to="/admin/users/create" className="btn btn-primary flex items-center gap-2">
+        <Link to="/admin/users/create" className="btn btn-primary flex items-center justify-center gap-2">
           <Plus className="w-5 h-5" />
-          Добавить пользователя
+          <span className="sm:inline">Добавить</span>
         </Link>
       </div>
 
@@ -153,7 +153,82 @@ export default function UsersPage() {
           </div>
         ) : (
           <>
-            <table className="min-w-full divide-y divide-gray-200">
+            {/* Mobile cards */}
+            <div className="block md:hidden divide-y divide-gray-200">
+              {users.map((user) => (
+                <div key={user.id} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {user.avatar ? (
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-medium">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-900">{user.name}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Link
+                        to={`/admin/users/${user.id}/edit`}
+                        className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </Link>
+                      <button
+                        onClick={() => setDeleteId(user.id)}
+                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {editingRole?.userId === user.id ? (
+                      <select
+                        value={editingRole.roleId || ''}
+                        onChange={(e) =>
+                          handleRoleChange(user.id, e.target.value ? Number(e.target.value) : null)
+                        }
+                        onBlur={() => setEditingRole(null)}
+                        autoFocus
+                        className="input py-1 text-sm"
+                      >
+                        <option value="">Без роли</option>
+                        {roles.map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {role.display_name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <button
+                        onClick={() => setEditingRole({ userId: user.id, roleId: user.role_id })}
+                        className="flex items-center gap-2 px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm"
+                      >
+                        <Shield className="w-4 h-4 text-gray-500" />
+                        <span>{user.role?.display_name || 'Без роли'}</span>
+                      </button>
+                    )}
+                    <span className="text-xs text-gray-500">
+                      {user.last_activity_at
+                        ? formatDistanceToNow(user.last_activity_at)
+                        : 'Никогда'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <table className="hidden md:table min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="table-header">Пользователь</th>
@@ -244,16 +319,16 @@ export default function UsersPage() {
 
             {/* Pagination */}
             {pagination && pagination.last_page > 1 && (
-              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <p className="text-sm text-gray-600">
                   Показано {users.length} из {pagination.total}
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   {Array.from({ length: pagination.last_page }, (_, i) => i + 1).map((page) => (
                     <button
                       key={page}
                       onClick={() => loadUsers(page)}
-                      className={`px-3 py-1 rounded ${
+                      className={`px-3 py-1 rounded text-sm ${
                         page === pagination.current_page
                           ? 'bg-primary-600 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

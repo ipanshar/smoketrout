@@ -112,17 +112,17 @@ export default function RoleFormPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto px-4 sm:px-0">
       <button
         onClick={() => navigate('/admin/roles')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
       >
         <ArrowLeft className="w-5 h-5" />
-        Назад к списку ролей
+        <span className="text-sm sm:text-base">Назад к списку</span>
       </button>
 
-      <div className="card p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
+      <div className="card p-4 sm:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
           {isEditing ? 'Редактирование роли' : 'Создание роли'}
         </h1>
 
@@ -225,15 +225,15 @@ export default function RoleFormPage() {
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <button type="submit" disabled={isSaving} className="btn btn-primary flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <button type="submit" disabled={isSaving} className="btn btn-primary flex items-center justify-center gap-2 order-1">
               <Save className="w-5 h-5" />
               {isSaving ? 'Сохранение...' : 'Сохранить'}
             </button>
             <button
               type="button"
               onClick={() => navigate('/admin/roles')}
-              className="btn btn-secondary"
+              className="btn btn-secondary order-2"
             >
               Отмена
             </button>

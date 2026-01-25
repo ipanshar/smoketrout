@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import {Picker} from '@react-native-picker/picker';
 import api from '../../lib/api';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RouteProp} from '@react-navigation/native';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 interface Role {
   id: number;
@@ -19,10 +18,11 @@ interface Role {
   display_name: string;
 }
 
-type Props = {
-  navigation: NativeStackNavigationProp<any>;
-  route: RouteProp<{params: {id?: number}}, 'params'>;
+type AdminStackParamList = {
+  UserForm: {id?: number};
 };
+
+type Props = NativeStackScreenProps<AdminStackParamList, 'UserForm'>;
 
 export default function UserFormScreen({navigation, route}: Props) {
   const {id} = route.params || {};
