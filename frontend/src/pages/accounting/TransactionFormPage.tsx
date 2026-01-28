@@ -346,8 +346,6 @@ export default function TransactionFormPage() {
   const needsCash = ['cash_in', 'cash_out', 'sale_payment', 'purchase_payment', 'dividend_payment', 'salary_payment', 'loan_in', 'loan_out'].includes(type);
   const needsTransferWarehouses = type === 'transfer';
   const canHavePartialPayment = ['sale', 'purchase'].includes(type);
-  const isWriteoff = type === 'writeoff';
-  const isLoan = ['loan_in', 'loan_out'].includes(type);
 
   // Получаем текущую валюту и фильтруем кассы по валюте
   const currentCurrency = currencies.find(c => c.id === currencyId);
