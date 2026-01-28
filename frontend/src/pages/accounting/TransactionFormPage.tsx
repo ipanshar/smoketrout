@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Save, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, CheckCircle, ShoppingCart, Truck, Package, Wallet, ArrowRightLeft, Trash, HandCoins, Banknote, Users, Briefcase, DollarSign, ArrowDownToLine, ArrowUpFromLine, ChevronDown, ChevronUp } from 'lucide-react';
 import api from '../../lib/api';
 
 interface TransactionType {
@@ -99,6 +99,7 @@ export default function TransactionFormPage() {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isTypeExpanded, setIsTypeExpanded] = useState(true);
 
   // Form data
   const [type, setType] = useState('');
@@ -137,9 +138,9 @@ export default function TransactionFormPage() {
     if (isEdit) loadTransaction();
   }, [id]);
 
-  // Recalculate total when items change (for sale/purchase)
+  // Recalculate total when items change (for sale/purchase/writeoff)
   useEffect(() => {
-    const hasItems = ['sale', 'purchase', 'transfer'].includes(type);
+    const hasItems = ['sale', 'purchase', 'transfer', 'writeoff'].includes(type);
     if (hasItems) {
       const itemsSum = items.reduce((acc, item) => acc + item.quantity * item.price, 0);
       const servicesSum = serviceEntries.reduce((acc, entry) => acc + entry.quantity * entry.price, 0);
@@ -147,9 +148,9 @@ export default function TransactionFormPage() {
     }
   }, [items, serviceEntries, type]);
 
-  // Recalculate total when cash entries change (for payment operations)
+  // Recalculate total when cash entries change (for payment operations and loans)
   useEffect(() => {
-    const isPaymentOperation = ['sale_payment', 'purchase_payment'].includes(type);
+    const isPaymentOperation = ['sale_payment', 'purchase_payment', 'loan_in', 'loan_out'].includes(type);
     if (isPaymentOperation) {
       const sum = cashEntries.reduce((acc, entry) => acc + Math.abs(entry.amount), 0);
       setTotalAmount(sum);
@@ -304,15 +305,49 @@ export default function TransactionFormPage() {
     }
   };
 
-  const needsCounterparty = ['sale', 'sale_payment', 'purchase', 'purchase_payment'].includes(type);
+  // Конфигурация типов операций с иконками и цветами
+  const typeConfig: Record<string, { icon: any; color: string; bgClass: string; textClass: string }> = {
+    sale: { icon: ShoppingCart, color: 'green', bgClass: 'bg-green-100', textClass: 'text-green-700' },
+    sale_payment: { icon: ArrowDownToLine, color: 'green', bgClass: 'bg-green-100', textClass: 'text-green-700' },
+    purchase: { icon: Truck, color: 'orange', bgClass: 'bg-orange-100', textClass: 'text-orange-700' },
+    purchase_payment: { icon: ArrowUpFromLine, color: 'orange', bgClass: 'bg-orange-100', textClass: 'text-orange-700' },
+    loan_in: { icon: HandCoins, color: 'blue', bgClass: 'bg-blue-100', textClass: 'text-blue-700' },
+    loan_out: { icon: Banknote, color: 'purple', bgClass: 'bg-purple-100', textClass: 'text-purple-700' },
+    transfer: { icon: ArrowRightLeft, color: 'blue', bgClass: 'bg-blue-100', textClass: 'text-blue-700' },
+    writeoff: { icon: Trash, color: 'red', bgClass: 'bg-red-100', textClass: 'text-red-700' },
+    cash_in: { icon: ArrowDownToLine, color: 'green', bgClass: 'bg-green-100', textClass: 'text-green-700' },
+    cash_out: { icon: ArrowUpFromLine, color: 'red', bgClass: 'bg-red-100', textClass: 'text-red-700' },
+    dividend_accrual: { icon: Users, color: 'purple', bgClass: 'bg-purple-100', textClass: 'text-purple-700' },
+    dividend_payment: { icon: DollarSign, color: 'purple', bgClass: 'bg-purple-100', textClass: 'text-purple-700' },
+    salary_accrual: { icon: Briefcase, color: 'blue', bgClass: 'bg-blue-100', textClass: 'text-blue-700' },
+    salary_payment: { icon: Banknote, color: 'blue', bgClass: 'bg-blue-100', textClass: 'text-blue-700' },
+  };
+
+  // Компонент бейджа с иконкой и цветом для выбранного типа
+  const TypeBadge = ({ typeValue }: { typeValue: string }) => {
+    const config = typeConfig[typeValue];
+    const label = types.find(t => t.value === typeValue)?.label || typeValue;
+    if (!config) return <span className="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">{label}</span>;
+    const Icon = config.icon;
+    return (
+      <span className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5 ${config.bgClass} ${config.textClass}`}>
+        <Icon className="w-4 h-4" />
+        {label}
+      </span>
+    );
+  };
+
+  const needsCounterparty = ['sale', 'sale_payment', 'purchase', 'purchase_payment', 'loan_in', 'loan_out'].includes(type);
   const needsPartner = ['dividend_accrual', 'dividend_payment'].includes(type);
   const needsSalary = ['salary_accrual', 'salary_payment'].includes(type);
-  const needsItems = ['sale', 'purchase', 'transfer'].includes(type);
+  const needsItems = ['sale', 'purchase', 'transfer', 'writeoff'].includes(type);
   const needsServices = ['sale', 'purchase'].includes(type);
   // Кассовые операции только для прямых кассовых операций и выплат (для sale/purchase касса выбирается в разделе оплаты)
-  const needsCash = ['cash_in', 'cash_out', 'sale_payment', 'purchase_payment', 'dividend_payment', 'salary_payment'].includes(type);
+  const needsCash = ['cash_in', 'cash_out', 'sale_payment', 'purchase_payment', 'dividend_payment', 'salary_payment', 'loan_in', 'loan_out'].includes(type);
   const needsTransferWarehouses = type === 'transfer';
   const canHavePartialPayment = ['sale', 'purchase'].includes(type);
+  const isWriteoff = type === 'writeoff';
+  const isLoan = ['loan_in', 'loan_out'].includes(type);
 
   // Получаем текущую валюту и фильтруем кассы по валюте
   const currentCurrency = currencies.find(c => c.id === currencyId);
@@ -354,8 +389,8 @@ export default function TransactionFormPage() {
   const handleTypeChange = (newType: string) => {
     setType(newType);
     
-    // При выборе salary_payment или dividend_payment автоматически добавляем кассовую запись с первой доступной кассой
-    if ((newType === 'salary_payment' || newType === 'dividend_payment') && cashEntries.length === 0) {
+    // При выборе salary_payment, dividend_payment или займов автоматически добавляем кассовую запись с первой доступной кассой
+    if (['salary_payment', 'dividend_payment', 'loan_in', 'loan_out'].includes(newType) && cashEntries.length === 0) {
       const availableCashRegisters = cashRegisters.filter(cr => cr.currency_id === currencyId);
       const firstCashRegister = availableCashRegisters[0];
       setCashEntries([{ 
@@ -366,7 +401,7 @@ export default function TransactionFormPage() {
     }
     
     // При смене типа сбрасываем записи которые не нужны для нового типа
-    const needsCashForType = ['cash_in', 'cash_out', 'sale', 'sale_payment', 'purchase', 'purchase_payment', 'dividend_payment', 'salary_payment'].includes(newType);
+    const needsCashForType = ['cash_in', 'cash_out', 'sale', 'sale_payment', 'purchase', 'purchase_payment', 'dividend_payment', 'salary_payment', 'loan_in', 'loan_out'].includes(newType);
     if (!needsCashForType) {
       setCashEntries([]);
     }
@@ -381,6 +416,15 @@ export default function TransactionFormPage() {
     if (!needsServicesForType) {
       setServiceEntries([]);
     }
+
+    // Сбрасываем товарные позиции если не нужны
+    const needsItemsForType = ['sale', 'purchase', 'transfer', 'writeoff'].includes(newType);
+    if (!needsItemsForType) {
+      setItems([]);
+    }
+
+    // Сворачиваем блок выбора типа после выбора
+    setIsTypeExpanded(false);
   };
 
   const addCashEntry = () => {
@@ -599,7 +643,8 @@ export default function TransactionFormPage() {
     else if (needsCash && cashEntries.length > 0) {
       finalCashEntries = cashEntries.filter((e) => e.cash_register_id).map((e) => ({
         ...e,
-        amount: ['cash_out', 'purchase_payment', 'dividend_payment', 'salary_payment'].includes(type) ? -e.amount : e.amount,
+        // loan_out - выдаём деньги (расход), loan_in - получаем деньги (приход)
+        amount: ['cash_out', 'purchase_payment', 'dividend_payment', 'salary_payment', 'loan_out'].includes(type) ? -e.amount : e.amount,
       }));
     }
 
@@ -681,29 +726,172 @@ export default function TransactionFormPage() {
           </div>
         )}
 
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+          {/* Заголовок блока - кликабельный для сворачивания/разворачивания */}
+          <button
+            type="button"
+            onClick={() => setIsTypeExpanded(!isTypeExpanded)}
+            className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            disabled={!isEditable}
+          >
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold">Тип операции</h2>
+              {type && !isTypeExpanded && <TypeBadge typeValue={type} />}
+            </div>
+            <div className="flex items-center gap-2">
+              {!type && (
+                <span className="text-sm text-gray-500">Выберите тип</span>
+              )}
+              {isTypeExpanded ? (
+                <ChevronUp className="w-5 h-5 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-400" />
+              )}
+            </div>
+          </button>
+          
+          {/* Тип операции - плитки */}
+          {isTypeExpanded && (
+            <div id="error-type" className="px-6 pb-6 space-y-4 border-t border-gray-100 pt-4">
+            {/* Продажи / Закупки */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4" />
+                Продажи / Закупки
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                {[
+                  { value: 'sale', label: 'Продажа', icon: ShoppingCart, color: 'green' },
+                  { value: 'sale_payment', label: 'Оплата от покупателя', icon: ArrowDownToLine, color: 'green' },
+                  { value: 'purchase', label: 'Покупка', icon: Truck, color: 'orange' },
+                  { value: 'purchase_payment', label: 'Оплата поставщику', icon: ArrowUpFromLine, color: 'orange' },
+                  { value: 'loan_in', label: 'Займ от контрагента', icon: HandCoins, color: 'blue' },
+                  { value: 'loan_out', label: 'Займ контрагенту', icon: Banknote, color: 'purple' },
+                ].map((t) => {
+                  const Icon = t.icon;
+                  const isSelected = type === t.value;
+                  const colorClasses = {
+                    green: isSelected ? 'bg-green-100 border-green-500 text-green-700' : 'hover:bg-green-50 hover:border-green-300',
+                    orange: isSelected ? 'bg-orange-100 border-orange-500 text-orange-700' : 'hover:bg-orange-50 hover:border-orange-300',
+                    blue: isSelected ? 'bg-blue-100 border-blue-500 text-blue-700' : 'hover:bg-blue-50 hover:border-blue-300',
+                    purple: isSelected ? 'bg-purple-100 border-purple-500 text-purple-700' : 'hover:bg-purple-50 hover:border-purple-300',
+                  };
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => { handleTypeChange(t.value); setFormValidationErrors({}); }}
+                      disabled={!isEditable}
+                      className={`p-3 rounded-lg border-2 transition-all text-center ${
+                        isSelected 
+                          ? colorClasses[t.color as keyof typeof colorClasses]
+                          : `border-gray-200 ${colorClasses[t.color as keyof typeof colorClasses]} ${!isEditable ? 'opacity-50 cursor-not-allowed' : ''}`
+                      }`}
+                    >
+                      <Icon className={`w-6 h-6 mx-auto mb-1 ${isSelected ? '' : 'text-gray-400'}`} />
+                      <span className="text-xs font-medium block">{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Складские операции */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                Складские операции
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                {[
+                  { value: 'transfer', label: 'Перемещение', icon: ArrowRightLeft, color: 'blue' },
+                  { value: 'writeoff', label: 'Списание', icon: Trash, color: 'red' },
+                ].map((t) => {
+                  const Icon = t.icon;
+                  const isSelected = type === t.value;
+                  const colorClasses = {
+                    blue: isSelected ? 'bg-blue-100 border-blue-500 text-blue-700' : 'hover:bg-blue-50 hover:border-blue-300',
+                    red: isSelected ? 'bg-red-100 border-red-500 text-red-700' : 'hover:bg-red-50 hover:border-red-300',
+                  };
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => { handleTypeChange(t.value); setFormValidationErrors({}); }}
+                      disabled={!isEditable}
+                      className={`p-3 rounded-lg border-2 transition-all text-center ${
+                        isSelected 
+                          ? colorClasses[t.color as keyof typeof colorClasses]
+                          : `border-gray-200 ${colorClasses[t.color as keyof typeof colorClasses]} ${!isEditable ? 'opacity-50 cursor-not-allowed' : ''}`
+                      }`}
+                    >
+                      <Icon className={`w-6 h-6 mx-auto mb-1 ${isSelected ? '' : 'text-gray-400'}`} />
+                      <span className="text-xs font-medium block">{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Кассовые операции */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
+                <Wallet className="w-4 h-4" />
+                Кассовые операции
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                {[
+                  { value: 'cash_in', label: 'Приход денег', icon: ArrowDownToLine, color: 'green' },
+                  { value: 'cash_out', label: 'Расход денег', icon: ArrowUpFromLine, color: 'red' },
+                  { value: 'dividend_accrual', label: 'Начисл. дивидендов', icon: Users, color: 'purple' },
+                  { value: 'dividend_payment', label: 'Выплата дивидендов', icon: DollarSign, color: 'purple' },
+                  { value: 'salary_accrual', label: 'Начисл. зарплаты', icon: Briefcase, color: 'blue' },
+                  { value: 'salary_payment', label: 'Выплата зарплаты', icon: Banknote, color: 'blue' },
+                ].map((t) => {
+                  const Icon = t.icon;
+                  const isSelected = type === t.value;
+                  const colorClasses = {
+                    green: isSelected ? 'bg-green-100 border-green-500 text-green-700' : 'hover:bg-green-50 hover:border-green-300',
+                    red: isSelected ? 'bg-red-100 border-red-500 text-red-700' : 'hover:bg-red-50 hover:border-red-300',
+                    purple: isSelected ? 'bg-purple-100 border-purple-500 text-purple-700' : 'hover:bg-purple-50 hover:border-purple-300',
+                    blue: isSelected ? 'bg-blue-100 border-blue-500 text-blue-700' : 'hover:bg-blue-50 hover:border-blue-300',
+                  };
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => { handleTypeChange(t.value); setFormValidationErrors({}); }}
+                      disabled={!isEditable}
+                      className={`p-3 rounded-lg border-2 transition-all text-center ${
+                        isSelected 
+                          ? colorClasses[t.color as keyof typeof colorClasses]
+                          : `border-gray-200 ${colorClasses[t.color as keyof typeof colorClasses]} ${!isEditable ? 'opacity-50 cursor-not-allowed' : ''}`
+                      }`}
+                    >
+                      <Icon className={`w-6 h-6 mx-auto mb-1 ${isSelected ? '' : 'text-gray-400'}`} />
+                      <span className="text-xs font-medium block">{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {(errors.type || formValidationErrors.type) && (
+              <p className="text-red-500 text-sm mt-1">{errors.type?.[0] || formValidationErrors.type}</p>
+            )}
+            </div>
+          )}
+          
+          {/* Ошибка валидации если блок свёрнут */}
+          {!isTypeExpanded && (errors.type || formValidationErrors.type) && (
+            <p className="text-red-500 text-sm px-6 pb-4">{errors.type?.[0] || formValidationErrors.type}</p>
+          )}
+        </div>
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Основные данные</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div id="error-type">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Тип операции *</label>
-              <select
-                value={type}
-                onChange={(e) => { handleTypeChange(e.target.value); setFormValidationErrors({}); }}
-                className={`input ${formValidationErrors.type ? 'border-red-500 bg-red-50' : ''}`}
-                disabled={!isEditable}
-                required
-              >
-                <option value="">Выберите тип</option>
-                {types.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-              {(errors.type || formValidationErrors.type) && (
-                <p className="text-red-500 text-sm mt-1">{errors.type?.[0] || formValidationErrors.type}</p>
-              )}
-            </div>
-
             <div id="error-date">
               <label className="block text-sm font-medium text-gray-700 mb-1">Дата *</label>
               <input

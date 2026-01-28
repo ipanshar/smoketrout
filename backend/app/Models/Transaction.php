@@ -19,6 +19,9 @@ class Transaction extends Model
     public const TYPE_DIVIDEND_PAYMENT = 'dividend_payment';
     public const TYPE_SALARY_ACCRUAL = 'salary_accrual';
     public const TYPE_SALARY_PAYMENT = 'salary_payment';
+    public const TYPE_WRITEOFF = 'writeoff';
+    public const TYPE_LOAN_IN = 'loan_in';
+    public const TYPE_LOAN_OUT = 'loan_out';
 
     public const STATUS_DRAFT = 'draft';
     public const STATUS_CONFIRMED = 'confirmed';
@@ -37,6 +40,9 @@ class Transaction extends Model
         self::TYPE_DIVIDEND_PAYMENT => 'ВД', // Выплата дивидендов
         self::TYPE_SALARY_ACCRUAL => 'НЗ',   // Начисление зарплаты
         self::TYPE_SALARY_PAYMENT => 'ВЗ',   // Выплата зарплаты
+        self::TYPE_WRITEOFF => 'СП',         // Списание товаров
+        self::TYPE_LOAN_IN => 'ЗП',          // Займ получен (от контрагента)
+        self::TYPE_LOAN_OUT => 'ЗВ',         // Займ выдан (контрагенту)
     ];
 
     protected $fillable = [
@@ -155,6 +161,9 @@ class Transaction extends Model
             self::TYPE_DIVIDEND_PAYMENT => 'Выплата дивидендов',
             self::TYPE_SALARY_ACCRUAL => 'Начисление зарплаты',
             self::TYPE_SALARY_PAYMENT => 'Выплата зарплаты',
+            self::TYPE_WRITEOFF => 'Списание товаров',
+            self::TYPE_LOAN_IN => 'Займ от контрагента',
+            self::TYPE_LOAN_OUT => 'Займ контрагенту',
             default => $type,
         };
     }

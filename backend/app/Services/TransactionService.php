@@ -294,6 +294,10 @@ class TransactionService
                 elseif ($type === Transaction::TYPE_PURCHASE) {
                     $item['quantity'] = abs($item['quantity']);
                 }
+                // Для списания: расход
+                elseif ($type === Transaction::TYPE_WRITEOFF) {
+                    $item['quantity'] = -abs($item['quantity']);
+                }
 
                 $item['amount'] = abs($item['quantity']) * ($item['price'] ?? 0);
                 $transaction->items()->create($item);
@@ -306,12 +310,14 @@ class TransactionService
                 $transaction->counterpartyEntries()->create($entry);
             }
         }
-        // Автоматические записи по контрагенту для sale/purchase
+        // Автоматические записи по контрагенту для sale/purchase и займов
         elseif ($transaction->counterparty_id && in_array($type, [
             Transaction::TYPE_SALE,
             Transaction::TYPE_SALE_PAYMENT,
             Transaction::TYPE_PURCHASE,
             Transaction::TYPE_PURCHASE_PAYMENT,
+            Transaction::TYPE_LOAN_IN,
+            Transaction::TYPE_LOAN_OUT,
         ])) {
             $this->createCounterpartyEntry($transaction, $data);
         }
@@ -368,6 +374,22 @@ class TransactionService
             case Transaction::TYPE_PURCHASE_PAYMENT:
                 // Оплата поставщику: погашаем наш долг на сумму оплаты
                 // Берём сумму из кассовых записей (они отрицательные для расхода)
+                $cashAmount = $this->getCashEntriesTotal($data);
+                $amount = abs($cashAmount);
+                break;
+
+            case Transaction::TYPE_LOAN_IN:
+                // Займ от контрагента: мы должны контрагенту
+                // Получаем деньги в кассу (положительная сумма в кассе)
+                // Контрагент нам дал в долг = мы ему должны = отрицательная запись по контрагенту
+                $cashAmount = $this->getCashEntriesTotal($data);
+                $amount = -abs($cashAmount);
+                break;
+
+            case Transaction::TYPE_LOAN_OUT:
+                // Займ контрагенту: контрагент должен нам
+                // Выдаём деньги из кассы (отрицательная сумма в кассе)
+                // Мы дали в долг = контрагент нам должен = положительная запись по контрагенту
                 $cashAmount = $this->getCashEntriesTotal($data);
                 $amount = abs($cashAmount);
                 break;

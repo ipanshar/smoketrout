@@ -100,6 +100,7 @@ export default function StockPage() {
       sale: 'Продажа',
       purchase: 'Покупка',
       transfer: 'Перемещение',
+      writeoff: 'Списание',
     };
     return labels[type] || type;
   };

@@ -178,6 +178,9 @@ class TransactionController extends Controller
             ['value' => Transaction::TYPE_PURCHASE, 'label' => Transaction::getTypeLabel(Transaction::TYPE_PURCHASE)],
             ['value' => Transaction::TYPE_PURCHASE_PAYMENT, 'label' => Transaction::getTypeLabel(Transaction::TYPE_PURCHASE_PAYMENT)],
             ['value' => Transaction::TYPE_TRANSFER, 'label' => Transaction::getTypeLabel(Transaction::TYPE_TRANSFER)],
+            ['value' => Transaction::TYPE_WRITEOFF, 'label' => Transaction::getTypeLabel(Transaction::TYPE_WRITEOFF)],
+            ['value' => Transaction::TYPE_LOAN_IN, 'label' => Transaction::getTypeLabel(Transaction::TYPE_LOAN_IN)],
+            ['value' => Transaction::TYPE_LOAN_OUT, 'label' => Transaction::getTypeLabel(Transaction::TYPE_LOAN_OUT)],
             ['value' => Transaction::TYPE_DIVIDEND_ACCRUAL, 'label' => Transaction::getTypeLabel(Transaction::TYPE_DIVIDEND_ACCRUAL)],
             ['value' => Transaction::TYPE_DIVIDEND_PAYMENT, 'label' => Transaction::getTypeLabel(Transaction::TYPE_DIVIDEND_PAYMENT)],
             ['value' => Transaction::TYPE_SALARY_ACCRUAL, 'label' => Transaction::getTypeLabel(Transaction::TYPE_SALARY_ACCRUAL)],
@@ -193,7 +196,7 @@ class TransactionController extends Controller
     protected function validateTransaction(Request $request, ?Transaction $transaction = null): array
     {
         $rules = [
-            'type' => ['required', 'in:cash_in,cash_out,sale,sale_payment,purchase,purchase_payment,transfer,dividend_accrual,dividend_payment,salary_accrual,salary_payment'],
+            'type' => ['required', 'in:cash_in,cash_out,sale,sale_payment,purchase,purchase_payment,transfer,dividend_accrual,dividend_payment,salary_accrual,salary_payment,writeoff,loan_in,loan_out'],
             'date' => ['required', 'date'],
             'counterparty_id' => ['nullable', 'exists:counterparties,id'],
             'partner_id' => ['nullable', 'exists:partners,id'],
