@@ -43,4 +43,8 @@ return [
         'ios_client_id' => env('GOOGLE_IOS_CLIENT_ID'),
     ],
 
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+    ],
+
 ];

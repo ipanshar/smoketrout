@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\References\UnitController;
@@ -38,6 +39,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect']);
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 Route::post('/auth/google/mobile', [GoogleAuthController::class, 'mobileCallback']);
+
+// Telegram webhook
+Route::post('/telegram/webhook', [TelegramWebhookController::class, 'webhook']);
 
 // Protected routes
 Route::middleware(['auth:sanctum', 'activity'])->group(function () {
